@@ -1,0 +1,95 @@
+% layout 'mojo-status';
+
+% content_for head => begin
+  % if (my $refresh = param 'refresh') {
+    <meta http-equiv="refresh" content="<%= $refresh %>">
+  % }
+% end
+
+<table class="table borderless novertpad">
+  <tbody>
+    <tr>
+      <th class="fit text-left noleftpad" scope="row">
+        <i class="fas fa-cloud"></i>
+      </th>
+      <th class="fit text-left noleftpad" scope="row">Mojolicious:</th>
+      % my $version  = $Mojolicious::VERSION;
+      % my $codename = $Mojolicious::CODENAME;
+      <td><%= "$version ($codename)" %></td>
+    </tr>
+    <tr>
+      <th class="fit text-left noleftpad" scope="row">
+        <i class="fas fa-rocket"></i>
+      </th>
+      <th class="fit text-left noleftpad" scope="row">Perl:</th>
+      <td><%= "$^V ($^O)" %></td>
+    </tr>
+    <tr>
+      <th class="fit text-left noleftpad" scope="row">
+        <i class="fas fa-stream"></i>
+      </th>
+      <th class="fit text-left noleftpad" scope="row">Requests:</th>
+      <td><%= $stats->{processed} %></td>
+    </tr>
+    <tr>
+      <th class="fit text-left noleftpad" scope="row">
+        <i class="fas fa-clock"></i>
+      </th>
+      <th class="fit text-left noleftpad" scope="row">Uptime:</th>
+      % my $seconds = int(time - $stats->{started});
+      <td><%= $seconds == 1 ? '1 second' : "$seconds seconds" %></td>
+    </tr>
+    <tr>
+      <th class="fit text-left noleftpad" scope="row">
+        <i class="fas fa-wrench"></i>
+      </th>
+      <th class="fit text-left noleftpad" scope="row">Workers:</th>
+      % my @workers = values %{$stats->{workers}};
+      % my $idle = grep { !keys %{$_->{connections}} } @workers;
+      <td><%= keys(%{$stats->{workers}}) . " ($idle idle)" %></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="row">
+  <div class="col-md-12">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Worker</th>
+          <th>CPU</th>
+          <th>RSS</th>
+          <th>Client</th>
+          <th>Read/Written</th>
+          <th>Requests</th>
+          <th>ID</th>
+          <th></th>
+          <th>Time</th>
+          <th>Protocol</th>
+          <th>Request</th>
+        </tr>
+      </thead>
+      <tbody>
+        % for my $row (@$table) {
+          <tr>
+            % for my $i (0 .. 10) {
+              <td>
+                % if ($i == 7) {
+                  % if ($row->[$i]) {
+                    <i class="fas fa-circle"></i>
+                  % }
+                  % elsif (defined $row->[$i]) {
+                    <i class="fas fa-check-circle"></i>
+                  % }
+                % }
+                % else {
+                  <%= $row->[$i] // '' %>
+                % }
+              </td>
+            % }
+          </tr> 
+        % }
+      </tbody>
+    </table>
+  </div>
+</div>

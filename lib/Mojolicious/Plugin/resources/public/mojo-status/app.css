@@ -1,0 +1,23 @@
+pre {
+  background: #fafafa;
+  padding: 10px;
+  white-space: pre-wrap;
+}
+.table thead tr th {
+  border-top: 0 !important;
+}
+.table th.fit, table td.fit {
+  padding-left: 0px !important;
+  width: 1%;
+  white-space: nowrap;
+}
+.table.borderless td, .table.borderless th {
+  border: none;
+}
+.noleftpad {
+  padding-left: 0 !important;
+}
+.novertpad th, .novertpad td {
+  padding-bottom: 0 !important;
+  padding-top: 0 !important;
+}

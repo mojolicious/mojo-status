@@ -4,7 +4,7 @@ use Mojo::Base 'Mojolicious::Plugin';
 use BSD::Resource 'getrusage';
 use Cache::FastMmap;
 use Time::HiRes 'time';
-use Mojo::File qw(path tempdir);
+use Mojo::File qw(path tempfile);
 use Mojo::IOLoop;
 
 our $VERSION = '0.01';
@@ -54,8 +54,8 @@ sub _dashboard {
 sub _guard {
   my $self = shift;
 
-  my $dir  = $self->{dir}      //= tempdir;
-  my $lock = $self->{lock}{$$} //= $dir->child('lock')->open('>');
+  my $file = $self->{file}     //= tempfile;
+  my $lock = $self->{lock}{$$} //= $file->open('>');
   my $mmap = $self->{mmap}
     ||= Cache::FastMmap->new(serializer => 'sereal', unlink_on_exit => 1);
 

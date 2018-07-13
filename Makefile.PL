@@ -30,10 +30,10 @@ WriteMakefile(
     },
   },
   PREREQ_PM => {
-    Mojolicious      => '7.88',
-    'BSD::Resource'  => 0,
-    'IPC::ShareLite' => 0,
-    Sereal           => 0
+    Mojolicious       => '7.88',
+    'BSD::Resource'   => 0,
+    'Cache::FastMmap' => 0,
+    Sereal            => 0
   },
   test => {TESTS => 't/*.t'}
 );

@@ -2,9 +2,9 @@ package Mojolicious::Plugin::Status;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use BSD::Resource 'getrusage';
-use IPC::ShareLite;
+use Cache::FastMmap;
 use Time::HiRes 'time';
-use Mojo::File 'path';
+use Mojo::File qw(path tempdir);
 use Mojo::IOLoop;
 
 our $VERSION = '0.01';
@@ -15,9 +15,8 @@ sub register {
   # Config
   my $prefix = $config->{route} // $app->routes->any('/mojo-status');
   $prefix->to(return_to => $config->{return_to} // '/');
-  $self->{key} = $config->{shm_key} || '1234';
 
-  # Initialize shared memory
+  # Initialize cache
   $self->_guard->_store({started => time, processed => 0});
 
   # Only the two built-in servers are supported for now
@@ -55,11 +54,12 @@ sub _dashboard {
 sub _guard {
   my $self = shift;
 
-  my $share = $self->{share}
-    ||= IPC::ShareLite->new(-key => $self->{key}, -create => 1, -destroy => 0)
-    || die $!;
+  my $dir  = $self->{dir}      //= tempdir;
+  my $lock = $self->{lock}{$$} //= $dir->child('lock')->open('>');
+  my $mmap = $self->{mmap}
+    ||= Cache::FastMmap->new(serializer => 'sereal', unlink_on_exit => 1);
 
-  return Mojolicious::Plugin::Status::_Guard->new(share => $share);
+  return Mojolicious::Plugin::Status::_Guard->new(lock => $lock, mmap => $mmap);
 }
 
 sub _read_write {
@@ -226,16 +226,12 @@ package Mojolicious::Plugin::Status::_Guard;
 use Mojo::Base -base;
 
 use Fcntl ':flock';
-use Sereal::Decoder;
-use Sereal::Encoder;
 
-my ($DECODER, $ENCODER) = (Sereal::Decoder->new, Sereal::Encoder->new);
-
-sub DESTROY { shift->{share}->unlock }
+sub DESTROY { flock shift->{lock}, LOCK_UN or die "Cannot unlock: $!" }
 
 sub new {
   my $self = shift->SUPER::new(@_);
-  $self->{share}->lock(LOCK_EX);
+  flock $self->{lock}, LOCK_EX or die "Cannot lock: $!";
   return $self;
 }
 
@@ -246,12 +242,8 @@ sub _change {
   $self->_store($stats);
 }
 
-sub _fetch {
-  return {} unless my $data = shift->{share}->fetch;
-  return $DECODER->decode($data);
-}
-
-sub _store { shift->{share}->store($ENCODER->encode(shift)) }
+sub _fetch { shift->{mmap}->get('status') }
+sub _store { shift->{mmap}->set(status => shift) }
 
 1;
 
@@ -312,13 +304,6 @@ to C</>.
 
 L<Mojolicious::Routes::Route> object to attach the server status ui to, defaults
 to generating a new one with the prefix C</mojo-status>.
-
-=head2 shm_key
-
-  # Mojolicious::Lite
-  plugin Status => {shm_key => 1234};
-
-Shared memory key to use with L<IPC::ShareLite>, defaults to C<1234>.
 
 =head1 METHODS
 

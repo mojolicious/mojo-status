@@ -282,11 +282,13 @@ Mojolicious::Plugin::Status - Mojolicious server status
 =head1 DESCRIPTION
 
 =begin html
+
 <p>
   <img alt="Screenshot"
     src="https://raw.github.com/kraih/mojo-status/master/examples/status.png?raw=true"
     width="600px">
 </p>
+
 =end html
 
 L<Mojolicious::Plugin::Status> is a L<Mojolicious> plugin providing a server

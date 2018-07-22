@@ -4,7 +4,10 @@ use Test::More;
 use Mojolicious::Lite;
 use Test::Mojo;
 
-plugin Status => {shm_key => 4321};
+my $route = any '/status';
+
+plugin Status =>
+  {shm_key => 4321, return_to => '/does_not_exist', route => $route};
 
 get '/' => sub {
   my $c = shift;
@@ -12,9 +15,11 @@ get '/' => sub {
 };
 
 my $t = Test::Mojo->new;
-$t->get_ok('/')->status_is(200)->content_is('Hello Mojo!');
 
-$t->get_ok('/mojo-status.json')->json_is('/processed', 4);
+# Basics
+$t->get_ok('/status.json')->status_is(200)->json_is('/processed', 2);
+$t->get_ok('/')->status_is(200)->content_is('Hello Mojo!');
+$t->get_ok('/status.json')->status_is(200)->json_is('/processed', 6);
 
 # Bundled static files
 $t->get_ok('/mojo-status/bootstrap/bootstrap.js')->status_is(200)
@@ -43,5 +48,21 @@ $t->get_ok('/mojo-status/logo-black-2x.png')->status_is(200)
   ->content_type_is('image/png');
 $t->get_ok('/mojo-status/logo-black.png')->status_is(200)
   ->content_type_is('image/png');
+
+# JSON
+$t->get_ok('/status.json')->status_is(200)->json_is('/processed', 50)
+  ->json_has('/started')->json_has("/workers/$$/connections")
+  ->json_has("/workers/$$/maxrss")->json_has("/workers/$$/processed")
+  ->json_has("/workers/$$/started")->json_has("/workers/$$/stime")
+  ->json_has("/workers/$$/utime");
+
+# HTML
+$t->get_ok('/status')
+  ->element_exists_not('meta[http-equiv=refresh][content=5]')
+  ->text_like('a[href=/does_not_exist]' => qr/Back to Site/);
+
+# Refresh
+$t->get_ok('/status?refresh=5')
+  ->element_exists('meta[http-equiv=refresh][content=5]');
 
 done_testing;

@@ -7,7 +7,7 @@ use Time::HiRes 'time';
 use Mojo::File 'path';
 use Mojo::IOLoop;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub register {
   my ($self, $app, $config) = @_;

@@ -226,10 +226,9 @@ package Mojolicious::Plugin::Status::_Guard;
 use Mojo::Base -base;
 
 use Fcntl ':flock';
-use Sereal::Decoder;
-use Sereal::Encoder;
+use Sereal qw(get_sereal_decoder get_sereal_encoder);
 
-my ($DECODER, $ENCODER) = (Sereal::Decoder->new, Sereal::Encoder->new);
+my ($DECODER, $ENCODER) = (get_sereal_decoder, get_sereal_encoder);
 
 sub DESTROY { shift->{share}->unlock }
 

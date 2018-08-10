@@ -154,7 +154,6 @@ sub _stream {
       );
     }
   );
-  $stream->on(transition => sub { $self->_stream($id) });
 }
 
 sub _table {

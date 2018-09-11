@@ -283,7 +283,7 @@ Mojolicious::Plugin::Status - Mojolicious server status
 
 <p>
   <img alt="Screenshot"
-    src="https://raw.github.com/kraih/mojo-status/master/examples/status.png?raw=true"
+    src="https://raw.github.com/mojolicious/mojo-status/master/examples/status.png?raw=true"
     width="600px">
 </p>
 

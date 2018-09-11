@@ -17,13 +17,14 @@ WriteMakefile(
     no_index       => {directory => ['t']},
     prereqs        => {runtime => {requires => {perl => '5.010001'}}},
     resources      => {
-      bugtracker => {web => 'https://github.com/kraih/mojo-status/issues'},
+      bugtracker =>
+        {web => 'https://github.com/mojolicious/mojo-status/issues'},
       homepage   => 'https://mojolicious.org',
       license    => ['http://www.opensource.org/licenses/artistic-license-2.0'],
       repository => {
         type => 'git',
-        url  => 'https://github.com/kraih/mojo-status.git',
-        web  => 'https://github.com/kraih/mojo-status',
+        url  => 'https://github.com/mojolicious/mojo-status.git',
+        web  => 'https://github.com/mojolicious/mojo-status',
       },
       x_IRC => 'irc://irc.perl.org/#mojo'
     },

@@ -1,7 +1,7 @@
 
-# Mojolicious-Plugin-Status [![Build Status](https://travis-ci.com/kraih/mojo-status.svg?branch=master)](https://travis-ci.com/kraih/mojo-status)
+# Mojolicious-Plugin-Status [![Build Status](https://travis-ci.com/mojolicious/mojo-status.svg?branch=master)](https://travis-ci.com/mojolicious/mojo-status)
 
-![Screenshot](https://raw.github.com/kraih/mojo-status/master/examples/status.png?raw=true)
+![Screenshot](https://raw.github.com/mojolicious/mojo-status/master/examples/status.png?raw=true)
 
   A server status ui for the [Mojolicious](https://mojolicious.org) real-time
   web framework. Very useful for debugging.

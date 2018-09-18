@@ -4,8 +4,6 @@
 1.0  2018-09-17
   - Fixed a problem where subprocesses would show up in the worker list.
 
-0.04  2018-07-24
-
 0.03  2018-07-23
   - Fixed package metadata.
 

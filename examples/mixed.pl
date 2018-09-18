@@ -17,6 +17,15 @@ get '/slow' => sub {
   Mojo::IOLoop->timer($delay => sub { $c->redirect_to('dashboard') });
 };
 
+get '/subprocess' => sub {
+  my $c = shift;
+
+  $c->inactivity_timeout(3600);
+
+  Mojo::IOLoop->subprocess(sub { sleep 5 },
+    sub { $c->redirect_to('dashboard') });
+};
+
 get '/chat';
 
 websocket '/channel' => sub {
@@ -37,9 +46,10 @@ app->start;
 __DATA__
 
 @@ dashboard.html.ep
-<%= link_to Chat  => 'chat' %>
-<%= link_to Slow  => 'slow' %>
-<%= link_to Status => 'mojo_status' %>
+<%= link_to Chat       => 'chat' %>
+<%= link_to Slow       => 'slow' %>
+<%= link_to Subprocess => 'subprocess' %>
+<%= link_to Status     => 'mojo_status' %>
 
 @@ chat.html.ep
 <form onsubmit="sendChat(this.children[0]); return false"><input></form>

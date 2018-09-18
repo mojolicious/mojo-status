@@ -1,7 +1,9 @@
 use Mojo::Base -strict;
 
 use Test::More;
+use Config;
 use Mojolicious::Lite;
+use Mojo::IOLoop;
 use Test::Mojo;
 
 my $route = any '/status';
@@ -12,6 +14,22 @@ plugin Status =>
 get '/' => sub {
   my $c = shift;
   $c->render(text => 'Hello Mojo!');
+};
+
+get '/subprocess' => sub {
+  my $c = shift;
+
+  $c->inactivity_timeout(3600);
+
+  Mojo::IOLoop->subprocess(
+    sub {
+      return $$;
+    },
+    sub {
+      my ($subprocess, $err, $pid) = @_;
+      $c->render(text => $pid);
+    }
+  );
 };
 
 my $t = Test::Mojo->new;
@@ -60,6 +78,16 @@ $t->get_ok('/status.json')->status_is(200)->json_is('/processed', 50)
 $t->get_ok('/status')
   ->element_exists_not('meta[http-equiv=refresh][content=5]')
   ->text_like('a[href=/does_not_exist]' => qr/Back to Site/);
+
+# Subprocess
+SKIP: {
+  skip 'Subprocess does not work with fork emulation', 2
+    if $Config{d_pseudofork};
+  $t->get_ok('/subprocess')->status_is(200);
+  my $pid = $t->tx->res->text;
+  $t->get_ok('/status.json')->status_is(200)->json_has('/started')
+    ->json_has("/workers/$$")->json_hasnt("/workers/$pid");
+}
 
 # Refresh
 $t->get_ok('/status?refresh=5')

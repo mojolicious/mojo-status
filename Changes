@@ -1,5 +1,6 @@
 
 1.02  2019-10-08
+  - Change IPC mechanism to Cache::FastMmap instead of IPC::ShareLite.
 
 1.01  2019-10-07
   - The IPC mechanism used by this module is unreliable, so production use is

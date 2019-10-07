@@ -2,7 +2,7 @@ package Mojolicious::Plugin::Status;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use BSD::Resource 'getrusage';
-use IPC::ShareLite;
+use Cache::FastMmap;
 use Time::HiRes 'time';
 use Mojo::File 'path';
 use Mojo::IOLoop;
@@ -15,10 +15,13 @@ sub register {
   # Config
   my $prefix = $config->{route} // $app->routes->any('/mojo-status');
   $prefix->to(return_to => $config->{return_to} // '/');
-  $self->{key} = $config->{shm_key} || '1234';
+  $self->{key} = $config->{shm_key} || $app->moniker;
 
   # Initialize cache
-  $self->_guard->_store({started => time, processed => 0});
+  $self->_guard->get_and_set($self->{key} => sub {
+    $_[1] //= {started => time, processed => 0};
+    return $_[1];
+  });
 
   # Only the two built-in servers are supported for now
   $app->hook(before_server_start => sub { $self->_start(@_) });
@@ -38,7 +41,8 @@ sub register {
 sub _dashboard {
   my $c = shift;
 
-  my $stats = $c->stash('mojo_status')->_guard->_fetch;
+  my $stats
+    = $c->stash('mojo_status')->_guard->get($c->stash('mojo_status')->{key});
 
   $c->respond_to(
     html => sub {
@@ -55,11 +59,11 @@ sub _dashboard {
 sub _guard {
   my $self = shift;
 
-  my $share = $self->{share}
-    ||= IPC::ShareLite->new(-key => $self->{key}, -create => 1, -destroy => 0)
-    || die $!;
-
-  return Mojolicious::Plugin::Status::_Guard->new(share => $share);
+  return $self->{share} ||= Cache::FastMmap->new(
+    serializer     => 'sereal',
+    init_file      => 1,
+    unlink_on_exit => 1,
+  ) || die $!;
 }
 
 sub _read_write {
@@ -79,31 +83,38 @@ sub _request {
   my $url   = $req->url->to_abs;
   my $proto = $tx->is_websocket ? 'ws' : 'http';
   $proto .= 's' if $req->is_secure;
-  $self->_guard->_change(sub {
-    $_->{workers}{$$}{connections}{$id}{request} = {
-      request_id => $req->request_id,
-      method     => $req->method,
-      protocol   => $proto,
-      host       => $url->host,
-      path       => $url->path->to_abs_string,
-      query      => $url->query->to_string,
-      started    => time
-    };
-    _read_write($_->{workers}{$$}{connections}{$id}, $id);
-    $_->{workers}{$$}{connections}{$id}{processed}++;
-    $_->{workers}{$$}{processed}++;
-    $_->{processed}++;
-  });
+  $self->_guard->get_and_set(
+    $self->{key} => sub {
+      $_[1]->{workers}{$$}{connections}{$id}{request} = {
+        request_id => $req->request_id,
+        method     => $req->method,
+        protocol   => $proto,
+        host       => $url->host,
+        path       => $url->path->to_abs_string,
+        query      => $url->query->to_string,
+        started    => time
+      };
+      _read_write($_[1]->{workers}{$$}{connections}{$id}, $id);
+      $_[1]->{workers}{$$}{connections}{$id}{processed}++;
+      $_[1]->{workers}{$$}{processed}++;
+      $_[1]->{processed}++;
+      return $_[1];
+    }
+  );
 
   # Request end
   $tx->on(
     finish => sub {
       my $tx = shift;
-      $self->_guard->_change(sub {
-        return unless $_->{workers}{$$};
-        $_->{workers}{$$}{connections}{$id}{request}{finished} = time;
-        $_->{workers}{$$}{connections}{$id}{request}{status}   = $tx->res->code;
-      });
+      $self->_guard->get_and_set(
+        $self->{key} => sub {
+          return $_[1] unless $_[1]->{workers}{$$};
+          $_[1]->{workers}{$$}{connections}{$id}{request}{finished} = time;
+          $_[1]->{workers}{$$}{connections}{$id}{request}{status}
+            = $tx->res->code;
+          return $_[1];
+        }
+      );
     }
   );
 }
@@ -111,12 +122,15 @@ sub _request {
 sub _resources {
   my $self = shift;
 
-  $self->_guard->_change(sub {
-    @{$_->{workers}{$$}}{qw(utime stime maxrss)} = (getrusage)[0, 1, 2];
-    for my $id (keys %{$_->{workers}{$$}{connections}}) {
-      _read_write($_->{workers}{$$}{connections}{$id}, $id);
+  $self->_guard->get_and_set(
+    $self->{key} => sub {
+      @{$_[1]->{workers}{$$}}{qw(utime stime maxrss)} = (getrusage)[0, 1, 2];
+      for my $id (keys %{$_[1]->{workers}{$$}{connections}}) {
+        _read_write($_[1]->{workers}{$$}{connections}{$id}, $id);
+      }
+      return $_[1];
     }
-  });
+  );
 }
 
 sub _start {
@@ -125,16 +139,24 @@ sub _start {
 
   # Register started workers
   Mojo::IOLoop->next_tick(sub {
-    $self->_guard->_change(sub {
-      $_->{workers}{$$} = {started => time, processed => 0};
-    });
+    $self->_guard->get_and_set(
+      $self->{key} => sub {
+        $_[1]->{workers}{$$} = {started => time, processed => 0};
+        return $_[1];
+      }
+    );
   });
 
   # Remove stopped workers
   $server->on(
     reap => sub {
       my ($server, $pid) = @_;
-      $self->_guard->_change(sub { delete $_->{workers}{$pid} });
+      $self->_guard->get_and_set(
+        $self->{key} => sub {
+          delete $_[1]->{workers}{$pid};
+          return $_[1];
+        }
+      );
     }
   ) if $server->isa('Mojo::Server::Prefork');
 
@@ -151,8 +173,11 @@ sub _stream {
   my $stream = Mojo::IOLoop->stream($id);
   $stream->on(
     close => sub {
-      $self->_guard->_change(
-        sub { delete $_->{workers}{$$}{connections}{$id} if $_->{workers}{$$} }
+      $self->_guard->get_and_set(
+        $self->{key} => sub {
+          delete $_[1]->{workers}{$$}{connections}{$id} if $_[1]->{workers}{$$};
+          return $_[1];
+        }
       );
     }
   );
@@ -207,51 +232,25 @@ sub _tx {
     connection => sub {
       my ($tx, $id) = @_;
 
-      return if $self->_guard->_fetch->{workers}{$$}{connections}{$id};
+      return
+        if $self->_guard->get($self->{key})->{workers}{$$}{connections}{$id};
 
-      $self->_guard->_change(sub {
-        $_->{workers}{$$}{connections}{$id} = {
-          started        => time,
-          remote_address => $tx->remote_address,
-          processed      => 0,
-          bytes_read     => 0,
-          bytes_written  => 0
-        };
-      });
+      $self->_guard->get_and_set(
+        $self->{key} => sub {
+          $_[1]->{workers}{$$}{connections}{$id} = {
+            started        => time,
+            remote_address => $tx->remote_address,
+            processed      => 0,
+            bytes_read     => 0,
+            bytes_written  => 0
+          };
+          return $_[1];
+        }
+      );
       $self->_stream($id);
     }
   );
 }
-
-package Mojolicious::Plugin::Status::_Guard;
-use Mojo::Base -base;
-
-use Fcntl ':flock';
-use Sereal qw(get_sereal_decoder get_sereal_encoder);
-
-my ($DECODER, $ENCODER) = (get_sereal_decoder, get_sereal_encoder);
-
-sub DESTROY { shift->{share}->unlock }
-
-sub new {
-  my $self = shift->SUPER::new(@_);
-  $self->{share}->lock(LOCK_EX);
-  return $self;
-}
-
-sub _change {
-  my ($self, $cb) = @_;
-  my $stats = $self->_fetch;
-  $cb->($_) for $stats;
-  $self->_store($stats);
-}
-
-sub _fetch {
-  return {} unless my $data = shift->{share}->fetch;
-  return $DECODER->decode($data);
-}
-
-sub _store { shift->{share}->store($ENCODER->encode(shift)) }
 
 1;
 
@@ -322,7 +321,7 @@ to generating a new one with the prefix C</mojo-status>.
   # Mojolicious::Lite
   plugin Status => {shm_key => 1234};
 
-Shared memory key to use with L<IPC::ShareLite>, defaults to C<1234>.
+Shared memory key to use with L<Cache::FastMmap>, defaults to C<app moniker>.
 
 =head1 METHODS
 

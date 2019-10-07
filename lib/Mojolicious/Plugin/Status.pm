@@ -141,7 +141,7 @@ sub _start {
   # Collect stats
   $app->hook(after_build_tx  => sub { $self->_tx(@_) });
   $app->hook(before_dispatch => sub { $self->_request(@_) });
-  Mojo::IOLoop->next_tick(sub { $self->_resources });
+  Mojo::IOLoop->next_tick(sub      { $self->_resources });
   Mojo::IOLoop->recurring(5 => sub { $self->_resources });
 }
 
@@ -175,7 +175,7 @@ sub _table {
       for my $cid (sort keys %$connections) {
         my $conn = $connections->{$cid};
         @worker = ('', '', '') if $repeat++;
-        my $rw = "$conn->{bytes_read}/$conn->{bytes_written}";
+        my $rw   = "$conn->{bytes_read}/$conn->{bytes_written}";
         my @conn = ($conn->{remote_address}, $rw, $conn->{processed});
 
         # Request
@@ -188,7 +188,7 @@ sub _table {
           $str .= " -> $req->{status}" if $req->{status};
 
           my $finished = $active ? time : $req->{finished};
-          my $time = sprintf '%.2f', $finished - $req->{started};
+          my $time     = sprintf '%.2f', $finished - $req->{started};
           push @table, [@worker, @conn, $rid, $active, $time, $proto, $str];
         }
         else { push @table, [@worker, @conn] }
@@ -293,8 +293,9 @@ Mojolicious::Plugin::Status - Mojolicious server status
 
 L<Mojolicious::Plugin::Status> is a L<Mojolicious> plugin providing a server
 status ui for L<Mojo::Server::Daemon> and L<Mojo::Server::Prefork>. Note that
-this module is B<EXPERIMENTAL> because the IPC mechanism used is unreliable.
-Therefore it should only be used for debugging purposes.
+this module is B<EXPERIMENTAL> because the IPC mechanism used can be unreliable
+and slow down the whole application significantly. Therefore it should currently
+only be used for debugging purposes.
 
 =head1 OPTIONS
 

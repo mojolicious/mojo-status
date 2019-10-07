@@ -292,8 +292,9 @@ Mojolicious::Plugin::Status - Mojolicious server status
 =end html
 
 L<Mojolicious::Plugin::Status> is a L<Mojolicious> plugin providing a server
-status ui for L<Mojo::Server::Daemon> and L<Mojo::Server::Prefork>. Very useful
-for debugging.
+status ui for L<Mojo::Server::Daemon> and L<Mojo::Server::Prefork>. Note that
+this module is B<EXPERIMENTAL> because the IPC mechanism used is unreliable.
+Therefore it should only be used for debugging purposes.
 
 =head1 OPTIONS
 

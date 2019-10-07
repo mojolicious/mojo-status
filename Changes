@@ -1,5 +1,7 @@
 
-1.01  2018-09-18
+1.01  2019-10-07
+  - The IPC mechanism used by this module is unreliable, so production use is
+    strongly discouraged.
 
 1.0  2018-09-17
   - Fixed a problem where subprocesses would show up in the worker list.

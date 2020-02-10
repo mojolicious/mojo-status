@@ -298,9 +298,8 @@ Mojolicious::Plugin::Status - Mojolicious server status
 
 L<Mojolicious::Plugin::Status> is a L<Mojolicious> plugin providing a server
 status ui for L<Mojo::Server::Daemon> and L<Mojo::Server::Prefork>. Note that
-this module is B<EXPERIMENTAL> because the IPC mechanism used can be unreliable
-and slow down the whole application significantly. Therefore it should currently
-only be used for debugging purposes.
+this module is B<EXPERIMENTAL> and should therefore only be used for debugging
+purposes.
 
 =head1 OPTIONS
 
@@ -325,7 +324,7 @@ to generating a new one with the prefix C</mojo-status>.
 =head2 size
 
   # Mojolicious::Lite
-  plugin Status => {size => 1024 * 1024};
+  plugin Status => {size => 1234};
 
 Size of anonymous mapped memory to use for storing statistics, defaults to
 C<52428800> (50 MiB).

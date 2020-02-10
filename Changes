@@ -1,4 +1,6 @@
 
+1.03  2020-02-11
+
 1.02  2020-02-10
   - Switched to File::Map as storage backend, so this plugin should be much
     more reliable and safer to use now. (kraih, haarg, leont)

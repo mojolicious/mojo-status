@@ -26,18 +26,21 @@
     </tr>
     <tr>
       <th class="fit text-left noleftpad" scope="row">
+        <i class="fas fa-clock"></i>
+      </th>
+      <th class="fit text-left noleftpad" scope="row">Started:</th>
+      % my ($s, $m, $h, $day, $month, $year) = localtime $stats->{started};
+      <td>
+        <%= sprintf '%04d-%02d-%02d %02d:%02d:%02d', $year + 1900, $month + 1,
+          $day, $h, $m, $s %>
+      </td>
+    </tr>
+    <tr>
+      <th class="fit text-left noleftpad" scope="row">
         <i class="fas fa-stream"></i>
       </th>
       <th class="fit text-left noleftpad" scope="row">Requests:</th>
       <td><%= $stats->{processed} %></td>
-    </tr>
-    <tr>
-      <th class="fit text-left noleftpad" scope="row">
-        <i class="fas fa-clock"></i>
-      </th>
-      <th class="fit text-left noleftpad" scope="row">Uptime:</th>
-      % my $seconds = int(time - $stats->{started});
-      <td><%= $seconds == 1 ? '1 second' : "$seconds seconds" %></td>
     </tr>
     <tr>
       <th class="fit text-left noleftpad" scope="row">
@@ -50,6 +53,8 @@
     </tr>
   </tbody>
 </table>
+
+<h4>Activity</h4>
 
 <div class="row">
   <div class="col-md-12">

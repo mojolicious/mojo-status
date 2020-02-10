@@ -9,17 +9,19 @@ use Mojo::IOLoop;
 
 our $VERSION = '1.02';
 
+our $MAP;
+
 sub register {
   my ($self, $app, $config) = @_;
 
   # Config
   my $prefix = $config->{route} // $app->routes->any('/mojo-status');
   $prefix->to(return_to => $config->{return_to} // '/');
-  my $size = $config->{size} ||= 50000000;
+  my $size = $config->{size} ||= 52428800;
 
   # Initialize cache
   $self->{tempfile} = tempfile->touch;
-  map_anonymous $self->{map}, $config->{size}, 'shared';
+  map_anonymous $MAP, $config->{size}, 'shared';
   $self->_guard->_store({started => time, processed => 0});
 
   # Only the two built-in servers are supported for now
@@ -56,10 +58,8 @@ sub _dashboard {
 
 sub _guard {
   my $self = shift;
-  return Mojolicious::Plugin::Status::_Guard->new(
-    map    => \$self->{map},
-    tempfh => $self->{tempfile}->open('>')
-  );
+  my $fh   = $self->{fh}{$$} ||= $self->{tempfile}->open('>');
+  return Mojolicious::Plugin::Status::_Guard->new(fh => $fh);
 }
 
 sub _read_write {
@@ -231,11 +231,11 @@ use Sereal qw(get_sereal_decoder get_sereal_encoder);
 
 my ($DECODER, $ENCODER) = (get_sereal_decoder, get_sereal_encoder);
 
-sub DESTROY { flock shift->{tempfh}, LOCK_UN }
+sub DESTROY { flock shift->{fh}, LOCK_UN }
 
 sub new {
   my $self = shift->SUPER::new(@_);
-  flock $self->{tempfh}, LOCK_EX;
+  flock $self->{fh}, LOCK_EX;
   return $self;
 }
 
@@ -248,12 +248,14 @@ sub _change {
 
 sub _fetch {
   my $self = shift;
-  return $DECODER->decode(${$self->{map}});
+  return $DECODER->decode($Mojolicious::Plugin::Status::MAP);
 }
 
 sub _store {
   my ($self, $data) = @_;
-  ${$self->{map}} = $ENCODER->encode($data);
+  my $bytes = $ENCODER->encode($data);
+  return if length $bytes > length $Mojolicious::Plugin::Status::MAP;
+  substr $Mojolicious::Plugin::Status::MAP, 0, length $bytes, $bytes;
 }
 
 1;
@@ -319,6 +321,14 @@ to C</>.
 
 L<Mojolicious::Routes::Route> object to attach the server status ui to, defaults
 to generating a new one with the prefix C</mojo-status>.
+
+=head2 size
+
+  # Mojolicious::Lite
+  plugin Status => {size => 1024 * 1024};
+
+Size of anonymous mapped memory to use for storing statistics, defaults to
+C<52428800> (50 MiB).
 
 =head1 METHODS
 

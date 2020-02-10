@@ -1,5 +1,6 @@
 
-1.02  2019-10-08
+1.02  2020-02-10
+  - Switch to File::Map as storage backend.
 
 1.01  2019-10-07
   - The IPC mechanism used by this module is unreliable, so production use is

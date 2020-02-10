@@ -2,9 +2,9 @@ package Mojolicious::Plugin::Status;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use BSD::Resource 'getrusage';
-use IPC::ShareLite;
+use File::Map 'map_anonymous';
 use Time::HiRes 'time';
-use Mojo::File 'path';
+use Mojo::File qw(path tempfile);
 use Mojo::IOLoop;
 
 our $VERSION = '1.02';
@@ -15,9 +15,11 @@ sub register {
   # Config
   my $prefix = $config->{route} // $app->routes->any('/mojo-status');
   $prefix->to(return_to => $config->{return_to} // '/');
-  $self->{key} = $config->{shm_key} || '1234';
+  my $size = $config->{size} ||= 50000000;
 
   # Initialize cache
+  $self->{tempfile} = tempfile->touch;
+  map_anonymous $self->{map}, $config->{size}, 'shared';
   $self->_guard->_store({started => time, processed => 0});
 
   # Only the two built-in servers are supported for now
@@ -54,12 +56,10 @@ sub _dashboard {
 
 sub _guard {
   my $self = shift;
-
-  my $share = $self->{share}
-    ||= IPC::ShareLite->new(-key => $self->{key}, -create => 1, -destroy => 0)
-    || die $!;
-
-  return Mojolicious::Plugin::Status::_Guard->new(share => $share);
+  return Mojolicious::Plugin::Status::_Guard->new(
+    map    => \$self->{map},
+    tempfh => $self->{tempfile}->open('>')
+  );
 }
 
 sub _read_write {
@@ -141,7 +141,7 @@ sub _start {
   # Collect stats
   $app->hook(after_build_tx  => sub { $self->_tx(@_) });
   $app->hook(before_dispatch => sub { $self->_request(@_) });
-  Mojo::IOLoop->next_tick(sub      { $self->_resources });
+  Mojo::IOLoop->next_tick(sub { $self->_resources });
   Mojo::IOLoop->recurring(5 => sub { $self->_resources });
 }
 
@@ -231,11 +231,11 @@ use Sereal qw(get_sereal_decoder get_sereal_encoder);
 
 my ($DECODER, $ENCODER) = (get_sereal_decoder, get_sereal_encoder);
 
-sub DESTROY { shift->{share}->unlock }
+sub DESTROY { flock shift->{tempfh}, LOCK_UN }
 
 sub new {
   my $self = shift->SUPER::new(@_);
-  $self->{share}->lock(LOCK_EX);
+  flock $self->{tempfh}, LOCK_EX;
   return $self;
 }
 
@@ -247,11 +247,14 @@ sub _change {
 }
 
 sub _fetch {
-  return {} unless my $data = shift->{share}->fetch;
-  return $DECODER->decode($data);
+  my $self = shift;
+  return $DECODER->decode(${$self->{map}});
 }
 
-sub _store { shift->{share}->store($ENCODER->encode(shift)) }
+sub _store {
+  my ($self, $data) = @_;
+  ${$self->{map}} = $ENCODER->encode($data);
+}
 
 1;
 
@@ -317,13 +320,6 @@ to C</>.
 L<Mojolicious::Routes::Route> object to attach the server status ui to, defaults
 to generating a new one with the prefix C</mojo-status>.
 
-=head2 shm_key
-
-  # Mojolicious::Lite
-  plugin Status => {shm_key => 1234};
-
-Shared memory key to use with L<IPC::ShareLite>, defaults to C<1234>.
-
 =head1 METHODS
 
 L<Mojolicious::Plugin::Status> inherits all methods from
@@ -366,7 +362,7 @@ Sebastian Riedel, C<sri@cpan.org>.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2018, Sebastian Riedel and others.
+Copyright (C) 2018-2020, Sebastian Riedel and others.
 
 This program is free software, you can redistribute it and/or modify it under
 the terms of the Artistic License version 2.0.

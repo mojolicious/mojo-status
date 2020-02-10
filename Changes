@@ -1,6 +1,7 @@
 
 1.02  2020-02-10
-  - Switch to File::Map as storage backend.
+  - Switched to File::Map as storage backend, so this plugin should be much
+    more reliable and safer to use now. (kraih, haarg, leont)
 
 1.01  2019-10-07
   - The IPC mechanism used by this module is unreliable, so production use is

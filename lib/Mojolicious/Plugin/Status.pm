@@ -9,8 +9,6 @@ use Mojo::IOLoop;
 
 our $VERSION = '1.02';
 
-our $MAP;
-
 sub register {
   my ($self, $app, $config) = @_;
 
@@ -21,7 +19,8 @@ sub register {
 
   # Initialize cache
   $self->{tempfile} = tempfile->touch;
-  map_anonymous $MAP, $config->{size}, 'shared';
+  map_anonymous my $map, $config->{size}, 'shared';
+  $self->{map} = \$map;
   $self->_guard->_store({started => time, processed => 0});
 
   # Only the two built-in servers are supported for now
@@ -59,7 +58,8 @@ sub _dashboard {
 sub _guard {
   my $self = shift;
   my $fh   = $self->{fh}{$$} ||= $self->{tempfile}->open('>');
-  return Mojolicious::Plugin::Status::_Guard->new(fh => $fh);
+  return Mojolicious::Plugin::Status::_Guard->new(fh => $fh,
+    map => $self->{map});
 }
 
 sub _read_write {
@@ -248,14 +248,14 @@ sub _change {
 
 sub _fetch {
   my $self = shift;
-  return $DECODER->decode($Mojolicious::Plugin::Status::MAP);
+  return $DECODER->decode(${$self->{map}});
 }
 
 sub _store {
   my ($self, $data) = @_;
   my $bytes = $ENCODER->encode($data);
-  return if length $bytes > length $Mojolicious::Plugin::Status::MAP;
-  substr $Mojolicious::Plugin::Status::MAP, 0, length $bytes, $bytes;
+  return if length $bytes > length ${$self->{map}};
+  substr ${$self->{map}}, 0, length $bytes, $bytes;
 }
 
 1;

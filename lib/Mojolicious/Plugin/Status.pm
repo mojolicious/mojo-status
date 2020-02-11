@@ -142,6 +142,7 @@ sub _request {
       started    => time
     };
     _read_write($_->{workers}{$$}{connections}{$id}, $id);
+    $_->{workers}{$$}{connections}{$id}{remote_address} = $tx->remote_address;
     $_->{workers}{$$}{connections}{$id}{processed}++;
     $_->{workers}{$$}{processed}++;
     $_->{processed}++;
@@ -164,10 +165,10 @@ sub _rendered {
   my ($self, $c) = @_;
 
   my $id = $c->tx->connection;
-  my $r  = $self->_guard->_fetch->{workers}{$$}{connections}{$id}{request};
-  return unless $r;
+  return unless my $c = $self->_guard->_fetch->{workers}{$$}{connections}{$id};
+  return unless my $r = $c->{request};
   $r->{runtime} = time - $r->{started};
-  $r->{worker}  = $$;
+  @{$r}{qw(remote_address worker)} = ($c->{remote_address}, $$);
 
   $self->_guard->_change(sub {
     my $slowest = $_->{slowest};
@@ -194,7 +195,8 @@ sub _slowest {
   for my $r (@{$stats->{slowest}}) {
     my $str  = "$r->{method} $r->{path}";
     my $time = sprintf '%.2f', $r->{runtime};
-    push @table, [$time, $str, $r->{request_id}, $r->{worker}, $r->{started}];
+    push @table,
+      [$time, $str, @{$r}{qw(request_id worker remote_address started)}];
   }
 
   return \@table;
@@ -251,11 +253,10 @@ sub _tx {
 
       $self->_guard->_change(sub {
         $_->{workers}{$$}{connections}{$id} = {
-          started        => time,
-          remote_address => $tx->remote_address,
-          processed      => 0,
-          bytes_read     => 0,
-          bytes_written  => 0
+          started       => time,
+          processed     => 0,
+          bytes_read    => 0,
+          bytes_written => 0
         };
       });
       $self->_stream($id);

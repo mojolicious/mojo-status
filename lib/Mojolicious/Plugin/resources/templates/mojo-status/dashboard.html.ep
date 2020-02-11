@@ -124,6 +124,7 @@
             <th>ID</th>
             <th></th>
             <th>Worker</th>
+            <th>Client</th>
             <th>Started</th>
           </tr>
         </thead>
@@ -152,7 +153,8 @@
                 % }
               </td>
               <td><%= $row->[3] %></td>
-              <td><%= $localtime->($row->[4]) %></td>
+              <td><%= $row->[4] %></td>
+              <td><%= $localtime->($row->[5]) %></td>
             </tr>
           % }
         </tbody>

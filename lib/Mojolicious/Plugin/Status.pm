@@ -6,6 +6,7 @@ use File::Map 'map_anonymous';
 use Time::HiRes 'time';
 use Mojo::File qw(path tempfile);
 use Mojo::IOLoop;
+use Mojo::Util 'humanize_bytes';
 
 our $VERSION = '1.03';
 
@@ -166,7 +167,7 @@ sub _table {
   for my $pid (sort keys %{$stats->{workers}}) {
     my $worker = $stats->{workers}{$pid};
     my $cpu    = sprintf '%.2f', $worker->{utime} + $worker->{stime};
-    my @worker = ($pid, $cpu, $worker->{maxrss});
+    my @worker = ($pid, $cpu, humanize_bytes($worker->{maxrss}));
 
     # Connections
     my $connections = $worker->{connections};
@@ -175,8 +176,10 @@ sub _table {
       for my $cid (sort keys %$connections) {
         my $conn = $connections->{$cid};
         @worker = ('', '', '') if $repeat++;
-        my $rw   = "$conn->{bytes_read}/$conn->{bytes_written}";
-        my @conn = ($conn->{remote_address}, $rw, $conn->{processed});
+        my $bytes_read    = humanize_bytes $conn->{bytes_read};
+        my $bytes_written = humanize_bytes $conn->{bytes_written};
+        my $rw            = "$bytes_read/$bytes_written";
+        my @conn          = ($conn->{remote_address}, $rw, $conn->{processed});
 
         # Request
         if (my $req = $conn->{request}) {

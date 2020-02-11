@@ -30,7 +30,7 @@ WriteMakefile(
     },
   },
   PREREQ_PM => {
-    Mojolicious     => '7.88',
+    Mojolicious     => '8.33',
     'BSD::Resource' => 0,
     'File::Map'     => 0,
     Sereal          => 0

@@ -8,8 +8,7 @@ use Test::Mojo;
 
 my $route = any '/status';
 
-plugin Status =>
-  {shm_key => 4321, return_to => '/does_not_exist', route => $route};
+plugin Status => {return_to => '/does_not_exist', route => $route};
 
 get '/' => sub {
   my $c = shift;

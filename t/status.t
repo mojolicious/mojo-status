@@ -81,6 +81,11 @@ $t->get_ok('/status')
   ->element_exists_not('meta[http-equiv=refresh][content=5]')
   ->text_like('a[href=/does_not_exist]' => qr/Back to Site/);
 
+# Reset
+$t->get_ok('/status.json')->status_is(200)->json_has('/slowest/2');
+$t->get_ok('/status?reset=1')->status_is(302);
+$t->get_ok('/status.json')->status_is(200)->json_hasnt('/slowest/2');
+
 # Subprocess
 SKIP: {
   skip 'Subprocess does not work with fork emulation', 2

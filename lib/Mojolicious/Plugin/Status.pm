@@ -88,8 +88,12 @@ sub _dashboard {
   my $c = shift;
 
   my $status = $c->stash('mojo_status');
-  my $stats  = $status->_guard->_fetch;
+  if ($c->param('reset')) {
+    $status->_guard->_change(sub { $_->{slowest} = [] });
+    return $c->redirect_to('mojo_status');
+  }
 
+  my $stats = $status->_guard->_fetch;
   $c->respond_to(
     html => sub {
       $c->render(

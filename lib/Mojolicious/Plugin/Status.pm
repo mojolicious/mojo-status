@@ -22,7 +22,7 @@ sub register {
   $self->{tempfile} = tempfile->touch;
   map_anonymous my $map, $config->{size}, 'shared';
   $self->{map} = \$map;
-  $self->_guard->_store({started => time, processed => 0});
+  $self->_guard->_store({started => time, processed => 0, slowest => []});
 
   # Only the two built-in servers are supported for now
   $app->hook(before_server_start => sub { $self->_start(@_) });
@@ -39,127 +39,7 @@ sub register {
     ->name('mojo_status');
 }
 
-sub _dashboard {
-  my $c = shift;
-
-  my $stats = $c->stash('mojo_status')->_guard->_fetch;
-
-  $c->respond_to(
-    html => sub {
-      $c->render(
-        'mojo-status/dashboard',
-        table => _table($stats),
-        stats => $stats
-      );
-    },
-    json => {json => $stats}
-  );
-}
-
-sub _guard {
-  my $self = shift;
-  my $fh   = $self->{fh}{$$} ||= $self->{tempfile}->open('>');
-  return Mojolicious::Plugin::Status::_Guard->new(fh => $fh,
-    map => $self->{map});
-}
-
-sub _read_write {
-  my ($record, $id) = @_;
-  return unless my $stream = Mojo::IOLoop->stream($id);
-  @{$record}{qw(bytes_read bytes_written)}
-    = ($stream->bytes_read, $stream->bytes_written);
-}
-
-sub _request {
-  my ($self, $c) = @_;
-
-  # Request start
-  my $tx    = $c->tx;
-  my $id    = $tx->connection;
-  my $req   = $tx->req;
-  my $url   = $req->url->to_abs;
-  my $proto = $tx->is_websocket ? 'ws' : 'http';
-  $proto .= 's' if $req->is_secure;
-  $self->_guard->_change(sub {
-    $_->{workers}{$$}{connections}{$id}{request} = {
-      request_id => $req->request_id,
-      method     => $req->method,
-      protocol   => $proto,
-      host       => $url->host,
-      path       => $url->path->to_abs_string,
-      query      => $url->query->to_string,
-      started    => time
-    };
-    _read_write($_->{workers}{$$}{connections}{$id}, $id);
-    $_->{workers}{$$}{connections}{$id}{processed}++;
-    $_->{workers}{$$}{processed}++;
-    $_->{processed}++;
-  });
-
-  # Request end
-  $tx->on(
-    finish => sub {
-      my $tx = shift;
-      $self->_guard->_change(sub {
-        return unless $_->{workers}{$$};
-        $_->{workers}{$$}{connections}{$id}{request}{finished} = time;
-        $_->{workers}{$$}{connections}{$id}{request}{status}   = $tx->res->code;
-      });
-    }
-  );
-}
-
-sub _resources {
-  my $self = shift;
-
-  $self->_guard->_change(sub {
-    @{$_->{workers}{$$}}{qw(utime stime maxrss)} = (getrusage)[0, 1, 2];
-    for my $id (keys %{$_->{workers}{$$}{connections}}) {
-      _read_write($_->{workers}{$$}{connections}{$id}, $id);
-    }
-  });
-}
-
-sub _start {
-  my ($self, $server, $app) = @_;
-  return unless $server->isa('Mojo::Server::Daemon');
-
-  # Register started workers
-  Mojo::IOLoop->next_tick(sub {
-    $self->_guard->_change(sub {
-      $_->{workers}{$$} = {started => time, processed => 0};
-    });
-  });
-
-  # Remove stopped workers
-  $server->on(
-    reap => sub {
-      my ($server, $pid) = @_;
-      $self->_guard->_change(sub { delete $_->{workers}{$pid} });
-    }
-  ) if $server->isa('Mojo::Server::Prefork');
-
-  # Collect stats
-  $app->hook(after_build_tx  => sub { $self->_tx(@_) });
-  $app->hook(before_dispatch => sub { $self->_request(@_) });
-  Mojo::IOLoop->next_tick(sub { $self->_resources });
-  Mojo::IOLoop->recurring(5 => sub { $self->_resources });
-}
-
-sub _stream {
-  my ($self, $id) = @_;
-
-  my $stream = Mojo::IOLoop->stream($id);
-  $stream->on(
-    close => sub {
-      $self->_guard->_change(
-        sub { delete $_->{workers}{$$}{connections}{$id} if $_->{workers}{$$} }
-      );
-    }
-  );
-}
-
-sub _table {
+sub _activity {
   my $stats = shift;
 
   # Workers
@@ -201,6 +81,157 @@ sub _table {
   }
 
   return \@table;
+}
+
+sub _dashboard {
+  my $c = shift;
+
+  my $stats = $c->stash('mojo_status')->_guard->_fetch;
+
+  $c->respond_to(
+    html => sub {
+      $c->render(
+        'mojo-status/dashboard',
+        activity => _activity($stats),
+        slowest  => _slowest($stats),
+        stats    => $stats
+      );
+    },
+    json => {json => $stats}
+  );
+}
+
+sub _guard {
+  my $self = shift;
+  my $fh   = $self->{fh}{$$} ||= $self->{tempfile}->open('>');
+  return Mojolicious::Plugin::Status::_Guard->new(fh => $fh,
+    map => $self->{map});
+}
+
+sub _read_write {
+  my ($record, $id) = @_;
+  return unless my $stream = Mojo::IOLoop->stream($id);
+  @{$record}{qw(bytes_read bytes_written)}
+    = ($stream->bytes_read, $stream->bytes_written);
+}
+
+sub _request {
+  my ($self, $c) = @_;
+
+  # Request start
+  my $tx    = $c->tx;
+  my $id    = $tx->connection;
+  my $req   = $tx->req;
+  my $url   = $req->url->to_abs;
+  my $proto = $tx->is_websocket ? 'ws' : 'http';
+  $proto .= 's' if $req->is_secure;
+  $self->_guard->_change(sub {
+    $_->{workers}{$$}{connections}{$id}{request} = {
+      request_id => $req->request_id,
+      method     => $req->method,
+      protocol   => $proto,
+      path       => $url->path->to_abs_string,
+      query      => $url->query->to_string,
+      started    => time
+    };
+    _read_write($_->{workers}{$$}{connections}{$id}, $id);
+    $_->{workers}{$$}{connections}{$id}{processed}++;
+    $_->{workers}{$$}{processed}++;
+    $_->{processed}++;
+  });
+
+  # Request end
+  $tx->on(
+    finish => sub {
+      my $tx = shift;
+      $self->_guard->_change(sub {
+        return unless $_->{workers}{$$};
+        $_->{workers}{$$}{connections}{$id}{request}{finished} = time;
+        $_->{workers}{$$}{connections}{$id}{request}{status}   = $tx->res->code;
+      });
+    }
+  );
+}
+
+sub _rendered {
+  my ($self, $c) = @_;
+
+  my $id = $c->tx->connection;
+  my $r  = $self->_guard->_fetch->{workers}{$$}{connections}{$id}{request};
+  return unless $r;
+  $r->{runtime} = time - $r->{started};
+  $r->{worker}  = $$;
+
+  $self->_guard->_change(sub {
+    my $slowest = $_->{slowest};
+    @$slowest = sort { $b->{runtime} <=> $a->{runtime} } @$slowest, $r;
+    pop @$slowest while @$slowest > 10;
+  });
+}
+
+sub _resources {
+  my $self = shift;
+
+  $self->_guard->_change(sub {
+    @{$_->{workers}{$$}}{qw(utime stime maxrss)} = (getrusage)[0, 1, 2];
+    for my $id (keys %{$_->{workers}{$$}{connections}}) {
+      _read_write($_->{workers}{$$}{connections}{$id}, $id);
+    }
+  });
+}
+
+sub _slowest {
+  my $stats = shift;
+
+  my @table;
+  for my $r (@{$stats->{slowest}}) {
+    my $str = "$r->{method} $r->{path}";
+    $str .= "?$r->{query}" if $r->{query};
+    my $time = sprintf '%.2f', $r->{runtime};
+    push @table, [$time, $str, $r->{request_id}, $r->{worker}, $r->{started}];
+  }
+
+  return \@table;
+}
+
+sub _start {
+  my ($self, $server, $app) = @_;
+  return unless $server->isa('Mojo::Server::Daemon');
+
+  # Register started workers
+  Mojo::IOLoop->next_tick(sub {
+    $self->_guard->_change(sub {
+      $_->{workers}{$$} = {started => time, processed => 0};
+    });
+  });
+
+  # Remove stopped workers
+  $server->on(
+    reap => sub {
+      my ($server, $pid) = @_;
+      $self->_guard->_change(sub { delete $_->{workers}{$pid} });
+    }
+  ) if $server->isa('Mojo::Server::Prefork');
+
+  # Collect stats
+  $app->hook(after_build_tx  => sub { $self->_tx(@_) });
+  $app->hook(before_dispatch => sub { $self->_request(@_) });
+  $app->hook(after_dispatch  => sub { $self->_rendered(@_) });
+  Mojo::IOLoop->next_tick(sub { $self->_resources });
+  Mojo::IOLoop->recurring(5 => sub { $self->_resources });
+}
+
+sub _stream {
+  my ($self, $id) = @_;
+
+  my $stream = Mojo::IOLoop->stream($id);
+  $stream->on(
+    close => sub {
+      $self->_guard->_change(
+        sub { delete $_->{workers}{$$}{connections}{$id} if $_->{workers}{$$} }
+      );
+    }
+  );
 }
 
 sub _tx {

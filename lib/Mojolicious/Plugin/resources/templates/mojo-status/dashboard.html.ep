@@ -6,6 +6,12 @@
   % }
 % end
 
+% my $localtime = sub {
+%   my ($s, $m, $h, $day, $month, $year) = localtime shift;
+%   return sprintf '%04d-%02d-%02d %02d:%02d:%02d', $year + 1900, $month + 1,
+%     $day, $h, $m, $s;
+% };
+
 <table class="table borderless novertpad">
   <tbody>
     <tr>
@@ -29,11 +35,7 @@
         <i class="fas fa-clock"></i>
       </th>
       <th class="fit text-left noleftpad" scope="row">Started:</th>
-      % my ($s, $m, $h, $day, $month, $year) = localtime $stats->{started};
-      <td>
-        <%= sprintf '%04d-%02d-%02d %02d:%02d:%02d', $year + 1900, $month + 1,
-          $day, $h, $m, $s %>
-      </td>
+      <td><%= $localtime->($stats->{started}) %></td>
     </tr>
     <tr>
       <th class="fit text-left noleftpad" scope="row">
@@ -75,7 +77,7 @@
         </tr>
       </thead>
       <tbody>
-        % for my $row (@$table) {
+        % for my $row (@$activity) {
           <tr>
             % for my $i (0 .. 10) {
               <td>
@@ -98,3 +100,36 @@
     </table>
   </div>
 </div>
+
+% if (@$slowest) {
+
+  <h4>Slowest</h4>
+
+  <div class="row">
+    <div class="col-md-12">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Request</th>
+            <th>ID</th>
+            <th>Worker</th>
+            <th>Started</th>
+          </tr>
+        </thead>
+        <tbody>
+          % for my $row (@$slowest) {
+            <tr>
+              <td><%= $row->[0] %></td>
+              <td><%= $row->[1] %></td>
+              <td><%= $row->[2] %></td>
+              <td><%= $row->[3] %></td>
+              <td><%= $localtime->($row->[4]) %></td>
+            </tr>
+          % }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+% }

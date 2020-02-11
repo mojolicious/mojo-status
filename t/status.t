@@ -71,7 +71,10 @@ $t->get_ok('/status.json')->status_is(200)->json_is('/processed', 50)
   ->json_has('/started')->json_has("/workers/$$/connections")
   ->json_has("/workers/$$/maxrss")->json_has("/workers/$$/processed")
   ->json_has("/workers/$$/started")->json_has("/workers/$$/stime")
-  ->json_has("/workers/$$/utime");
+  ->json_has("/workers/$$/utime")->json_has('/slowest/0')
+  ->json_has('/slowest/0/runtime')->json_has('/slowest/0/path')
+  ->json_has('/slowest/0/request_id')->json_has('/slowest/1')
+  ->json_has('/slowest/9')->json_hasnt('/slowest/10');
 
 # HTML
 $t->get_ok('/status')

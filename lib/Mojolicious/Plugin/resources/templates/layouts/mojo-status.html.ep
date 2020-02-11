@@ -15,8 +15,8 @@
       <div class="container">
         %= link_to 'mojo_status' => (class => 'navbar-brand') => begin
           <picture>
-            <img src="<%= url_for '/mojo-status/logo-black.png' %>"
-              srcset="<%= url_for '/mojo-status/logo-black-2x.png' %> 2x">
+            <source srcset="<%= url_for '/mojo-status/logo-black-2x.png' %> 2x">
+            <img src="<%= url_for '/mojo-status/logo-black.png' %>">
           </picture>
         % end
         <button class="navbar-toggler" type="button" data-toggle="collapse"

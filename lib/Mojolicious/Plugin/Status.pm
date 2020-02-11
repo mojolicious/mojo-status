@@ -192,8 +192,7 @@ sub _slowest {
 
   my @table;
   for my $r (@{$stats->{slowest}}) {
-    my $str = "$r->{method} $r->{path}";
-    $str .= "?$r->{query}" if $r->{query};
+    my $str  = "$r->{method} $r->{path}";
     my $time = sprintf '%.2f', $r->{runtime};
     push @table, [$time, $str, $r->{request_id}, $r->{worker}, $r->{started}];
   }

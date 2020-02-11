@@ -25,6 +25,15 @@
     </tr>
     <tr>
       <th class="fit text-left noleftpad" scope="row">
+        <i class="fas fa-chart-pie"></i>
+      </th>
+      <th class="fit text-left noleftpad" scope="row">Plugin:</th>
+      <td>
+        <%= $Mojolicious::Plugin::Status::VERSION %> (<%= "$usage/$size" %>)
+      </td>
+    </tr>
+    <tr>
+      <th class="fit text-left noleftpad" scope="row">
         <i class="fas fa-rocket"></i>
       </th>
       <th class="fit text-left noleftpad" scope="row">Perl:</th>
@@ -113,16 +122,35 @@
             <th>Time</th>
             <th>Request</th>
             <th>ID</th>
+            <th></th>
             <th>Worker</th>
             <th>Started</th>
           </tr>
         </thead>
         <tbody>
           % for my $row (@$slowest) {
+            % my $time = $row->[0];
             <tr>
-              <td><%= $row->[0] %></td>
+              <td><%= $time %></td>
               <td><%= $row->[1] %></td>
               <td><%= $row->[2] %></td>
+              <td>
+                % if ($time < 10) {
+                  <span style="color: green">
+                    <i class="fas fa-smile"></i>
+                  </span>
+                % }
+                % elsif ($time < 60) {
+                  <span style="color: orange">
+                    <i class="fas fa-meh"></i>
+                  </span>
+                % }
+                % else {
+                  <span style="color: red">
+                    <i class="fas fa-frown"></i>
+                  </span>
+                % }
+              </td>
               <td><%= $row->[3] %></td>
               <td><%= $localtime->($row->[4]) %></td>
             </tr>

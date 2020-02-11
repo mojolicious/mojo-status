@@ -16,7 +16,8 @@ sub register {
   # Config
   my $prefix = $config->{route} // $app->routes->any('/mojo-status');
   $prefix->to(return_to => $config->{return_to} // '/');
-  my $size = $config->{size} ||= 52428800;
+  $self->{size}  = $config->{size} ||= 52428800;
+  $self->{usage} = 0;
 
   # Initialize cache
   $self->{tempfile} = tempfile->touch;
@@ -86,12 +87,15 @@ sub _activity {
 sub _dashboard {
   my $c = shift;
 
-  my $stats = $c->stash('mojo_status')->_guard->_fetch;
+  my $status = $c->stash('mojo_status');
+  my $stats  = $status->_guard->_fetch;
 
   $c->respond_to(
     html => sub {
       $c->render(
         'mojo-status/dashboard',
+        usage    => humanize_bytes($status->{usage}),
+        size     => humanize_bytes($status->{size}),
         activity => _activity($stats),
         slowest  => _slowest($stats),
         stats    => $stats
@@ -104,8 +108,11 @@ sub _dashboard {
 sub _guard {
   my $self = shift;
   my $fh   = $self->{fh}{$$} ||= $self->{tempfile}->open('>');
-  return Mojolicious::Plugin::Status::_Guard->new(fh => $fh,
-    map => $self->{map});
+  return Mojolicious::Plugin::Status::_Guard->new(
+    fh    => $fh,
+    map   => $self->{map},
+    usage => \$self->{usage}
+  );
 }
 
 sub _read_write {
@@ -287,8 +294,9 @@ sub _fetch {
 
 sub _store {
   my ($self, $data) = @_;
-  my $bytes = $ENCODER->encode($data);
-  return if length $bytes > length ${$self->{map}};
+  my $usage = length(my $bytes = $ENCODER->encode($data));
+  ${$self->{usage}} = $usage;
+  return if $usage > length ${$self->{map}};
   substr ${$self->{map}}, 0, length $bytes, $bytes;
 }
 

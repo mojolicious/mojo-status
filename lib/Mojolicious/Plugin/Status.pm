@@ -165,10 +165,11 @@ sub _rendered {
   my ($self, $c) = @_;
 
   my $id = $c->tx->connection;
-  return unless my $c = $self->_guard->_fetch->{workers}{$$}{connections}{$id};
-  return unless my $r = $c->{request};
+  return
+    unless my $conn = $self->_guard->_fetch->{workers}{$$}{connections}{$id};
+  return unless my $r = $conn->{request};
   $r->{runtime} = time - $r->{started};
-  @{$r}{qw(remote_address worker)} = ($c->{remote_address}, $$);
+  @{$r}{qw(remote_address worker)} = ($conn->{remote_address}, $$);
 
   $self->_guard->_change(sub {
     my $slowest = $_->{slowest};

@@ -22,5 +22,6 @@ ok !$map->writer->store({foo => join('', 1 .. 1000000)}), 'not written';
 is_deeply $map->writer->fetch, {foo => 'test'}, 'data unmodified';
 ok $map->writer->store({foo => 'works'}), 'written';
 is_deeply $map->writer->fetch, {foo => 'works'}, 'data retained';
+is $map->size, 256, 'right size';
 
 done_testing;

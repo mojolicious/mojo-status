@@ -16,6 +16,7 @@ sub register {
   # Config
   my $prefix = $config->{route} // $app->routes->any('/mojo-status');
   $prefix->to(return_to => $config->{return_to} // '/');
+  $self->{slowest} = $config->{slowest} // 10;
 
   # Initialize cache
   my $map = $self->{map} = Mojo::MemoryMap->new($config->{size});
@@ -164,7 +165,9 @@ sub _rendered {
   $map->writer->change(sub {
     my $slowest = $_->{slowest};
     @$slowest = sort { $b->{runtime} <=> $a->{runtime} } @$slowest, $r;
-    pop @$slowest while @$slowest > 10;
+    my %seen;
+    @$slowest = grep { !$seen{"$_->{method} $_->{path}"}++ } @$slowest;
+    pop @$slowest while @$slowest > $self->{slowest};
   });
 }
 
@@ -326,6 +329,13 @@ to generating a new one with the prefix C</mojo-status>.
 
 Size of anonymous mapped memory to use for storing statistics, defaults to
 C<52428800> (50 MiB).
+
+=head2 slowest
+
+  # Mojolicious::Lite
+  plugin Status => {slowest => 5}; 
+
+Number of slowest requests to track, defaults to C<10>.
 
 =head1 METHODS
 

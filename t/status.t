@@ -8,7 +8,8 @@ use Test::Mojo;
 
 my $route = any '/status';
 
-plugin Status => {return_to => '/does_not_exist', route => $route};
+plugin Status =>
+  {return_to => '/does_not_exist', route => $route, slowest => 5};
 
 get '/' => sub {
   my $c = shift;
@@ -74,7 +75,7 @@ $t->get_ok('/status.json')->status_is(200)->json_is('/processed', 50)
   ->json_has("/workers/$$/utime")->json_has('/slowest/0')
   ->json_has('/slowest/0/runtime')->json_has('/slowest/0/path')
   ->json_has('/slowest/0/request_id')->json_has('/slowest/1')
-  ->json_has('/slowest/9')->json_hasnt('/slowest/10');
+  ->json_has('/slowest/4')->json_hasnt('/slowest/5');
 
 # HTML
 $t->get_ok('/status')

@@ -44,7 +44,11 @@
         <i class="fas fa-clock"></i>
       </th>
       <th class="fit text-left noleftpad" scope="row">Started:</th>
-      <td><%= $localtime->($stats->{started}) %></td>
+      <td>
+        <span class="badge badge-dark">
+          <%= $localtime->($stats->{started}) %>
+        </span>
+      </td>
     </tr>
     <tr>
       <th class="fit text-left noleftpad" scope="row">
@@ -154,7 +158,11 @@
               </td>
               <td><%= $row->[3] %></td>
               <td><%= $row->[4] %></td>
-              <td><%= $localtime->($row->[5]) %></td>
+              <td>
+                <span class="badge badge-dark">
+                  <%= $localtime->($row->[5]) %>
+                </span>
+              </td>
             </tr>
           % }
         </tbody>

@@ -13,7 +13,7 @@ get '/slow' => sub {
 
   $c->inactivity_timeout(3600);
 
-  Mojo::IOLoop->timer(20 => sub { $c->redirect_to('dashboard') });
+  Mojo::IOLoop->timer(6 => sub { $c->redirect_to('dashboard') });
 };
 
 get '/superslow' => sub {
@@ -21,7 +21,7 @@ get '/superslow' => sub {
 
   $c->inactivity_timeout(3600);
 
-  Mojo::IOLoop->timer(65 => sub { $c->redirect_to('dashboard') });
+  Mojo::IOLoop->timer(31 => sub { $c->redirect_to('dashboard') });
 };
 
 get '/subprocess' => sub {
@@ -29,7 +29,7 @@ get '/subprocess' => sub {
 
   $c->inactivity_timeout(3600);
 
-  Mojo::IOLoop->subprocess(sub { sleep 5 },
+  Mojo::IOLoop->subprocess(sub { sleep 3 },
     sub { $c->redirect_to('dashboard') });
 };
 

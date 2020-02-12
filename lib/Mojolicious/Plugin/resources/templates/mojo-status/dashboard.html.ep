@@ -136,12 +136,12 @@
               <td><%= $row->[1] %></td>
               <td><%= $row->[2] %></td>
               <td>
-                % if ($time < 10) {
+                % if ($time < 5) {
                   <span style="color: green">
                     <i class="fas fa-smile"></i>
                   </span>
                 % }
-                % elsif ($time < 60) {
+                % elsif ($time < 30) {
                   <span style="color: orange">
                     <i class="fas fa-meh"></i>
                   </span>

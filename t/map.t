@@ -1,7 +1,9 @@
 use Mojo::Base -strict;
 
 use Test::More;
+use Mojo::IOLoop;
 use Mojo::MemoryMap;
+use Mojo::Promise;
 
 # Basics
 my $map = Mojo::MemoryMap->new;
@@ -23,5 +25,22 @@ is_deeply $map->writer->fetch, {foo => 'test'}, 'data unmodified';
 ok $map->writer->store({foo => 'works'}), 'written';
 is_deeply $map->writer->fetch, {foo => 'works'}, 'data retained';
 is $map->size, 256, 'right size';
+
+# Multiple processes
+$map = Mojo::MemoryMap->new;
+my $incr = sub {
+  my $promise = Mojo::Promise->new;
+  Mojo::IOLoop->subprocess(
+    sub {
+      my $writer = $map->writer;
+      sleep 1;
+      $writer->change(sub { $_->{counter}++ });
+    },
+    sub { $promise->resolve }
+  );
+  return $promise;
+};
+Mojo::Promise->all($incr->(), $incr->(), $incr->())->wait;
+is_deeply $map->writer->fetch, {counter => 3}, 'incremented three times';
 
 done_testing;

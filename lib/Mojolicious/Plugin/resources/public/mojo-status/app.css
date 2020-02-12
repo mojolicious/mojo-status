@@ -21,3 +21,7 @@ pre {
   padding-bottom: 0 !important;
   padding-top: 0 !important;
 }
+.wrappable {
+  word-wrap: break-word;
+  max-width: 300px;
+}

@@ -109,7 +109,7 @@
             </td>
             <td><%= $row->[8] // '' %></td>
             <td><%= $row->[9] // '' %></td>
-            <td><code><%= $row->[10] // '' %></code></td>
+            <td class="wrappable"><code><%= $row->[10] // '' %></code></td>
           </tr> 
         % }
       </tbody>
@@ -140,7 +140,7 @@
             % my $time = $row->[0];
             <tr>
               <td><%= $time %></td>
-              <td><code><%= $row->[1] %></code></td>
+              <td class="wrappable"><code><%= $row->[1] %></code></td>
               <td><%= $row->[2] %></td>
               <td>
                 % if ($time < 5) {

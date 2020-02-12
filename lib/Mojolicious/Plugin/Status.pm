@@ -2,10 +2,10 @@ package Mojolicious::Plugin::Status;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use BSD::Resource 'getrusage';
-use File::Map 'map_anonymous';
 use Time::HiRes 'time';
-use Mojo::File qw(path tempfile);
+use Mojo::File 'path';
 use Mojo::IOLoop;
+use Mojo::MemoryMap;
 use Mojo::Util 'humanize_bytes';
 
 our $VERSION = '1.03';
@@ -16,14 +16,10 @@ sub register {
   # Config
   my $prefix = $config->{route} // $app->routes->any('/mojo-status');
   $prefix->to(return_to => $config->{return_to} // '/');
-  $self->{size}  = $config->{size} ||= 52428800;
-  $self->{usage} = 0;
 
   # Initialize cache
-  $self->{tempfile} = tempfile->touch;
-  map_anonymous my $map, $config->{size}, 'shared';
-  $self->{map} = \$map;
-  $self->_guard->_store({started => time, processed => 0, slowest => []});
+  my $map = $self->{map} = Mojo::MemoryMap->new($config->{size});
+  $map->writer->store({started => time, processed => 0, slowest => []});
 
   # Only the two built-in servers are supported for now
   $app->hook(before_server_start => sub { $self->_start(@_) });
@@ -87,35 +83,25 @@ sub _activity {
 sub _dashboard {
   my $c = shift;
 
-  my $status = $c->stash('mojo_status');
+  my $map = $c->stash('mojo_status')->{map};
   if ($c->param('reset')) {
-    $status->_guard->_change(sub { $_->{slowest} = [] });
+    $map->writer->change(sub { $_->{slowest} = [] });
     return $c->redirect_to('mojo_status');
   }
 
-  my $stats = $status->_guard->_fetch;
+  my $stats = $map->writer->fetch;
   $c->respond_to(
     html => sub {
       $c->render(
         'mojo-status/dashboard',
-        usage    => humanize_bytes($status->{usage}),
-        size     => humanize_bytes($status->{size}),
+        usage    => humanize_bytes($map->usage),
+        size     => humanize_bytes($map->size),
         activity => _activity($stats),
         slowest  => _slowest($stats),
         stats    => $stats
       );
     },
     json => {json => $stats}
-  );
-}
-
-sub _guard {
-  my $self = shift;
-  my $fh   = $self->{fh}{$$} ||= $self->{tempfile}->open('>');
-  return Mojolicious::Plugin::Status::_Guard->new(
-    fh    => $fh,
-    map   => $self->{map},
-    usage => \$self->{usage}
   );
 }
 
@@ -136,7 +122,7 @@ sub _request {
   my $url   = $req->url->to_abs;
   my $proto = $tx->is_websocket ? 'ws' : 'http';
   $proto .= 's' if $req->is_secure;
-  $self->_guard->_change(sub {
+  $self->{map}->writer->change(sub {
     $_->{workers}{$$}{connections}{$id}{request} = {
       request_id => $req->request_id,
       method     => $req->method,
@@ -156,7 +142,7 @@ sub _request {
   $tx->on(
     finish => sub {
       my $tx = shift;
-      $self->_guard->_change(sub {
+      $self->{map}->writer->change(sub {
         return unless $_->{workers}{$$};
         $_->{workers}{$$}{connections}{$id}{request}{finished} = time;
         $_->{workers}{$$}{connections}{$id}{request}{status}   = $tx->res->code;
@@ -168,14 +154,14 @@ sub _request {
 sub _rendered {
   my ($self, $c) = @_;
 
-  my $id = $c->tx->connection;
-  return
-    unless my $conn = $self->_guard->_fetch->{workers}{$$}{connections}{$id};
-  return unless my $r = $conn->{request};
+  my $id   = $c->tx->connection;
+  my $map  = $self->{map};
+  my $conn = $map->writer->fetch->{workers}{$$}{connections}{$id};
+  return unless $conn && (my $r = $conn->{request});
   $r->{runtime} = time - $r->{started};
   @{$r}{qw(remote_address worker)} = ($conn->{remote_address}, $$);
 
-  $self->_guard->_change(sub {
+  $map->writer->change(sub {
     my $slowest = $_->{slowest};
     @$slowest = sort { $b->{runtime} <=> $a->{runtime} } @$slowest, $r;
     pop @$slowest while @$slowest > 10;
@@ -185,7 +171,7 @@ sub _rendered {
 sub _resources {
   my $self = shift;
 
-  $self->_guard->_change(sub {
+  $self->{map}->writer->change(sub {
     @{$_->{workers}{$$}}{qw(utime stime maxrss)} = (getrusage)[0, 1, 2];
     for my $id (keys %{$_->{workers}{$$}{connections}}) {
       _read_write($_->{workers}{$$}{connections}{$id}, $id);
@@ -213,7 +199,7 @@ sub _start {
 
   # Register started workers
   Mojo::IOLoop->next_tick(sub {
-    $self->_guard->_change(sub {
+    $self->{map}->writer->change(sub {
       $_->{workers}{$$} = {started => time, processed => 0};
     });
   });
@@ -222,7 +208,7 @@ sub _start {
   $server->on(
     reap => sub {
       my ($server, $pid) = @_;
-      $self->_guard->_change(sub { delete $_->{workers}{$pid} });
+      $self->{map}->writer->change(sub { delete $_->{workers}{$pid} });
     }
   ) if $server->isa('Mojo::Server::Prefork');
 
@@ -240,7 +226,7 @@ sub _stream {
   my $stream = Mojo::IOLoop->stream($id);
   $stream->on(
     close => sub {
-      $self->_guard->_change(
+      $self->{map}->writer->change(
         sub { delete $_->{workers}{$$}{connections}{$id} if $_->{workers}{$$} }
       );
     }
@@ -254,9 +240,10 @@ sub _tx {
     connection => sub {
       my ($tx, $id) = @_;
 
-      return if $self->_guard->_fetch->{workers}{$$}{connections}{$id};
+      my $map = $self->{map};
+      return if $map->writer->fetch->{workers}{$$}{connections}{$id};
 
-      $self->_guard->_change(sub {
+      $map->writer->change(sub {
         $_->{workers}{$$}{connections}{$id} = {
           started       => time,
           processed     => 0,
@@ -267,42 +254,6 @@ sub _tx {
       $self->_stream($id);
     }
   );
-}
-
-package Mojolicious::Plugin::Status::_Guard;
-use Mojo::Base -base;
-
-use Fcntl ':flock';
-use Sereal qw(get_sereal_decoder get_sereal_encoder);
-
-my ($DECODER, $ENCODER) = (get_sereal_decoder, get_sereal_encoder);
-
-sub DESTROY { flock shift->{fh}, LOCK_UN }
-
-sub new {
-  my $self = shift->SUPER::new(@_);
-  flock $self->{fh}, LOCK_EX;
-  return $self;
-}
-
-sub _change {
-  my ($self, $cb) = @_;
-  my $stats = $self->_fetch;
-  $cb->($_) for $stats;
-  $self->_store($stats);
-}
-
-sub _fetch {
-  my $self = shift;
-  return $DECODER->decode(${$self->{map}});
-}
-
-sub _store {
-  my ($self, $data) = @_;
-  my $usage = length(my $bytes = $ENCODER->encode($data));
-  ${$self->{usage}} = $usage;
-  return if $usage > length ${$self->{map}};
-  substr ${$self->{map}}, 0, length $bytes, $bytes;
 }
 
 1;

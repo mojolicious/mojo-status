@@ -1,5 +1,9 @@
 
-1.03  2020-02-11
+1.03  2020-02-12
+  - Added support for retaining a list of the slowest requests since server
+    start.
+  - Added reusable Mojo::MemoryMap module.
+  - Improved template design.
 
 1.02  2020-02-10
   - Switched to File::Map as storage backend, so this plugin should be much

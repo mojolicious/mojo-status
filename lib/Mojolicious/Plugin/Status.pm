@@ -8,7 +8,7 @@ use Mojo::IOLoop;
 use Mojo::MemoryMap;
 use Mojo::Util 'humanize_bytes';
 
-our $VERSION = '1.03';
+our $VERSION = '1.04';
 
 sub register {
   my ($self, $app, $config) = @_;

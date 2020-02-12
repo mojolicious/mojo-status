@@ -1,4 +1,6 @@
 
+1.04  2020-02-13
+
 1.03  2020-02-12
   - Added support for retaining a list of the slowest requests since server
     start.

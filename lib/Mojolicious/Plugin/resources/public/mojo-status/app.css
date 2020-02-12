@@ -42,5 +42,4 @@ div.stats .stats-body {
 .wrappable {
   word-break: break-all;
   word-wrap: break-word;
-  max-width: 300px;
 }

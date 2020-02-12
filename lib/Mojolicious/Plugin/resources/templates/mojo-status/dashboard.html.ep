@@ -92,21 +92,24 @@
       <tbody>
         % for my $row (@$activity) {
           <tr>
-            % for my $i (0 .. 10) {
-              <td>
-                % if ($i == 7) {
-                  % if ($row->[$i]) {
-                    <i class="fas fa-circle"></i>
-                  % }
-                  % elsif (defined $row->[$i]) {
-                    <i class="fas fa-check-circle"></i>
-                  % }
-                % }
-                % else {
-                  <%= $row->[$i] // '' %>
-                % }
-              </td>
-            % }
+            <td><%= $row->[0] // '' %></td>
+            <td><%= $row->[1] // '' %></td>
+            <td><%= $row->[2] // '' %></td>
+            <td><%= $row->[3] // '' %></td>
+            <td><%= $row->[4] // '' %></td>
+            <td><%= $row->[5] // '' %></td>
+            <td><%= $row->[6] // '' %></td>
+            <td>
+              % if ($row->[7]) {
+                <i class="fas fa-circle"></i>
+              % }
+              % elsif (defined $row->[7]) {
+                <i class="fas fa-check-circle"></i>
+              % }
+            </td>
+            <td><%= $row->[8] // '' %></td>
+            <td><%= $row->[9] // '' %></td>
+            <td><code><%= $row->[10] // '' %></code></td>
           </tr> 
         % }
       </tbody>
@@ -137,7 +140,7 @@
             % my $time = $row->[0];
             <tr>
               <td><%= $time %></td>
-              <td><%= $row->[1] %></td>
+              <td><code><%= $row->[1] %></code></td>
               <td><%= $row->[2] %></td>
               <td>
                 % if ($time < 5) {

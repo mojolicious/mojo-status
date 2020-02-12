@@ -14,4 +14,13 @@ is $map->size, 52428800, 'right default size';
 ok $map->usage > 0, 'has usage';
 ok $map->usage < $map->size, 'size not exceeded';
 
+# Small limit
+$map = Mojo::MemoryMap->new(256);
+ok $map->writer->store({foo => 'test'}), 'written';
+is_deeply $map->writer->fetch, {foo => 'test'}, 'data retained';
+ok !$map->writer->store({foo => join('', 1 .. 1000000)}), 'not written';
+is_deeply $map->writer->fetch, {foo => 'test'}, 'data unmodified';
+ok $map->writer->store({foo => 'works'}), 'written';
+is_deeply $map->writer->fetch, {foo => 'works'}, 'data retained';
+
 done_testing;

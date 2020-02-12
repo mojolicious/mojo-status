@@ -13,8 +13,15 @@ get '/slow' => sub {
 
   $c->inactivity_timeout(3600);
 
-  my $delay = $c->param('delay') || 20;
-  Mojo::IOLoop->timer($delay => sub { $c->redirect_to('dashboard') });
+  Mojo::IOLoop->timer(20 => sub { $c->redirect_to('dashboard') });
+};
+
+get '/superslow' => sub {
+  my $c = shift;
+
+  $c->inactivity_timeout(3600);
+
+  Mojo::IOLoop->timer(65 => sub { $c->redirect_to('dashboard') });
 };
 
 get '/subprocess' => sub {
@@ -48,6 +55,7 @@ __DATA__
 @@ dashboard.html.ep
 <%= link_to Chat       => 'chat' %>
 <%= link_to Slow       => 'slow' %>
+<%= link_to Superslow  => 'superslow' %>
 <%= link_to Subprocess => 'subprocess' %>
 <%= link_to Status     => 'mojo_status' %>
 

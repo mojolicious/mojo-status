@@ -3,6 +3,24 @@ pre {
   padding: 10px;
   white-space: pre-wrap;
 }
+div.stats {
+  border: solid 1px #777;
+  border-radius: 4px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, .05);
+  color: #777;
+}
+div.stats .stats-description {
+  font-size: 0.8em;
+  padding: 0 15px 15px;
+  text-align: center;
+}
+div.stats .stats-body {
+  font-size: 22px;
+  padding: 15px 15px 0;
+  text-align: center;
+  word-break: break-all;
+  word-wrap: break-word;
+}
 .table thead tr th {
   border-top: 0 !important;
 }

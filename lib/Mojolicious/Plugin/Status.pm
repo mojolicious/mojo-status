@@ -10,6 +10,14 @@ use Mojo::Util 'humanize_bytes';
 
 our $VERSION = '1.05';
 
+my $STATS = {
+  info         => 0,
+  success      => 0,
+  redirect     => 0,
+  client_error => 0,
+  server_error => 0
+};
+
 sub register {
   my ($self, $app, $config) = @_;
 
@@ -20,7 +28,8 @@ sub register {
 
   # Initialize cache
   my $map = $self->{map} = Mojo::MemoryMap->new($config->{size});
-  $map->writer->store({started => time, processed => 0, slowest => []});
+  $map->writer->store(
+    {processed => 0, started => time, stats => $STATS, slowest => []});
 
   # Only the two built-in servers are supported for now
   $app->hook(before_server_start => sub { $self->_start(@_) });
@@ -38,12 +47,12 @@ sub register {
 }
 
 sub _activity {
-  my $stats = shift;
+  my $all = shift;
 
   # Workers
   my @table;
-  for my $pid (sort keys %{$stats->{workers}}) {
-    my $worker = $stats->{workers}{$pid};
+  for my $pid (sort keys %{$all->{workers}}) {
+    my $worker = $all->{workers}{$pid};
     my $cpu    = sprintf '%.2f', $worker->{utime} + $worker->{stime};
     my @worker = ($pid, $cpu, humanize_bytes($worker->{maxrss}));
 
@@ -57,7 +66,7 @@ sub _activity {
         my $bytes_read    = humanize_bytes $conn->{bytes_read};
         my $bytes_written = humanize_bytes $conn->{bytes_written};
         my $rw            = "$bytes_read/$bytes_written";
-        my @conn          = ($conn->{remote_address}, $rw, $conn->{processed});
+        my @conn          = ($conn->{client}, $rw, $conn->{processed});
 
         # Request
         if (my $req = $conn->{request}) {
@@ -65,8 +74,8 @@ sub _activity {
           my ($rid, $proto) = @{$req}{qw(request_id protocol)};
 
           my $str = "$req->{method} $req->{path}";
-          $str .= "?$req->{query}"     if $req->{query};
-          $str .= " -> $req->{status}" if $req->{status};
+          $str .= "?$req->{query}"      if $req->{query};
+          $str .= " → $req->{status}" if $req->{status};
 
           my $finished = $active ? time : $req->{finished};
           my $time     = sprintf '%.2f', $finished - $req->{started};
@@ -86,23 +95,23 @@ sub _dashboard {
 
   my $map = $c->stash('mojo_status')->{map};
   if ($c->param('reset')) {
-    $map->writer->change(sub { $_->{slowest} = [] });
+    $map->writer->change(sub { @{$_}{qw(slowest stats)} = ([], $STATS) });
     return $c->redirect_to('mojo_status');
   }
 
-  my $stats = $map->writer->fetch;
+  my $all = $map->writer->fetch;
   $c->respond_to(
     html => sub {
       $c->render(
         'mojo-status/dashboard',
         usage    => humanize_bytes($map->usage),
         size     => humanize_bytes($map->size),
-        activity => _activity($stats),
-        slowest  => _slowest($stats),
-        stats    => $stats
+        activity => _activity($all),
+        slowest  => _slowest($all),
+        all      => $all
       );
     },
-    json => {json => $stats}
+    json => {json => $all}
   );
 }
 
@@ -133,10 +142,7 @@ sub _request {
       started    => time
     };
     _read_write($_->{workers}{$$}{connections}{$id}, $id);
-    $_->{workers}{$$}{connections}{$id}{remote_address} = $tx->remote_address;
-    $_->{workers}{$$}{connections}{$id}{processed}++;
-    $_->{workers}{$$}{processed}++;
-    $_->{processed}++;
+    $_->{workers}{$$}{connections}{$id}{client} = $tx->remote_address;
   });
 
   # Request end
@@ -144,9 +150,20 @@ sub _request {
     finish => sub {
       my $tx = shift;
       $self->{map}->writer->change(sub {
-        return unless $_->{workers}{$$};
-        $_->{workers}{$$}{connections}{$id}{request}{finished} = time;
-        $_->{workers}{$$}{connections}{$id}{request}{status}   = $tx->res->code;
+        return unless my $worker = $_->{workers}{$$};
+
+        my $code = $tx->res->code || 0;
+        if    ($code > 499) { $_->{stats}{server_error}++ }
+        elsif ($code > 399) { $_->{stats}{client_error}++ }
+        elsif ($code > 299) { $_->{stats}{redirect}++ }
+        elsif ($code > 199) { $_->{stats}{success}++ }
+        elsif ($code)       { $_->{stats}{info}++ }
+
+        $worker->{connections}{$id}{request}{finished} = time;
+        $worker->{connections}{$id}{request}{status}   = $code;
+        $worker->{connections}{$id}{processed}++;
+        $worker->{processed}++;
+        $_->{processed}++;
       });
     }
   );
@@ -158,13 +175,13 @@ sub _rendered {
   my $id   = $c->tx->connection;
   my $map  = $self->{map};
   my $conn = $map->writer->fetch->{workers}{$$}{connections}{$id};
-  return unless $conn && (my $r = $conn->{request});
-  $r->{runtime} = time - $r->{started};
-  @{$r}{qw(remote_address worker)} = ($conn->{remote_address}, $$);
+  return unless $conn && (my $req = $conn->{request});
+  $req->{runtime} = time - $req->{started};
+  @{$req}{qw(client status worker)} = ($conn->{client}, $c->res->code, $$);
 
   $map->writer->change(sub {
     my $slowest = $_->{slowest};
-    @$slowest = sort { $b->{runtime} <=> $a->{runtime} } @$slowest, $r;
+    @$slowest = sort { $b->{runtime} <=> $a->{runtime} } @$slowest, $req;
     my %seen;
     @$slowest = grep { !$seen{"$_->{method} $_->{path}"}++ } @$slowest;
     pop @$slowest while @$slowest > $self->{slowest};
@@ -183,14 +200,15 @@ sub _resources {
 }
 
 sub _slowest {
-  my $stats = shift;
+  my $all = shift;
 
   my @table;
-  for my $r (@{$stats->{slowest}}) {
-    my $str  = "$r->{method} $r->{path}";
-    my $time = sprintf '%.2f', $r->{runtime};
-    push @table,
-      [$time, $str, @{$r}{qw(request_id worker remote_address started)}];
+  for my $req (@{$all->{slowest}}) {
+    my $str = "$req->{method} $req->{path}";
+    $str .= "?$req->{query}"      if $req->{query};
+    $str .= " → $req->{status}" if $req->{status};
+    my $time = sprintf '%.2f', $req->{runtime};
+    push @table, [$time, $str, @{$req}{qw(request_id worker client started)}];
   }
 
   return \@table;
@@ -202,9 +220,8 @@ sub _start {
 
   # Register started workers
   Mojo::IOLoop->next_tick(sub {
-    $self->{map}->writer->change(sub {
-      $_->{workers}{$$} = {started => time, processed => 0};
-    });
+    $self->{map}->writer->change(
+      sub { $_->{workers}{$$} = {started => time, processed => 0} });
   });
 
   # Remove stopped workers

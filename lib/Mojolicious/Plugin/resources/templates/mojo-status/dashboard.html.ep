@@ -12,62 +12,102 @@
 %     $day, $h, $m, $s;
 % };
 
-<table class="table borderless novertpad">
-  <tbody>
-    <tr>
-      <th class="fit text-left noleftpad" scope="row">
-        <i class="fas fa-cloud"></i>
-      </th>
-      <th class="fit text-left noleftpad" scope="row">Mojolicious:</th>
-      % my $version  = $Mojolicious::VERSION;
-      % my $codename = $Mojolicious::CODENAME;
-      <td><%= "$version ($codename)" %></td>
-    </tr>
-    <tr>
-      <th class="fit text-left noleftpad" scope="row">
-        <i class="fas fa-chart-pie"></i>
-      </th>
-      <th class="fit text-left noleftpad" scope="row">Plugin:</th>
-      <td>
-        <%= $Mojolicious::Plugin::Status::VERSION %> (<%= "$usage/$size" %>)
-      </td>
-    </tr>
-    <tr>
-      <th class="fit text-left noleftpad" scope="row">
-        <i class="fas fa-rocket"></i>
-      </th>
-      <th class="fit text-left noleftpad" scope="row">Perl:</th>
-      <td><%= "$^V ($^O)" %></td>
-    </tr>
-    <tr>
-      <th class="fit text-left noleftpad" scope="row">
-        <i class="fas fa-clock"></i>
-      </th>
-      <th class="fit text-left noleftpad" scope="row">Started:</th>
-      <td>
-        <span class="badge badge-dark">
-          <%= $localtime->($stats->{started}) %>
-        </span>
-      </td>
-    </tr>
-    <tr>
-      <th class="fit text-left noleftpad" scope="row">
-        <i class="fas fa-stream"></i>
-      </th>
-      <th class="fit text-left noleftpad" scope="row">Requests:</th>
-      <td><%= $stats->{processed} %></td>
-    </tr>
-    <tr>
-      <th class="fit text-left noleftpad" scope="row">
-        <i class="fas fa-wrench"></i>
-      </th>
-      <th class="fit text-left noleftpad" scope="row">Workers:</th>
-      % my @workers = values %{$stats->{workers}};
-      % my $idle = grep { !keys %{$_->{connections}} } @workers;
-      <td><%= keys(%{$stats->{workers}}) . " ($idle idle)" %></td>
-    </tr>
-  </tbody>
-</table>
+<div class="row">
+  <div class="col-md-4">
+    <table class="table borderless novertpad">
+      <tbody>
+        <tr>
+          <th class="fit text-left noleftpad" scope="row">
+            <i class="fas fa-cloud"></i>
+          </th>
+          <th class="fit text-left noleftpad" scope="row">Mojolicious:</th>
+          % my $version  = $Mojolicious::VERSION;
+          % my $codename = $Mojolicious::CODENAME;
+          <td><%= "$version ($codename)" %></td>
+        </tr>
+        <tr>
+          <th class="fit text-left noleftpad" scope="row">
+            <i class="fas fa-chart-pie"></i>
+          </th>
+          <th class="fit text-left noleftpad" scope="row">Plugin:</th>
+          <td>
+            <%= $Mojolicious::Plugin::Status::VERSION %> (<%= "$usage/$size" %>)
+          </td>
+        </tr>
+        <tr>
+          <th class="fit text-left noleftpad" scope="row">
+            <i class="fas fa-rocket"></i>
+          </th>
+          <th class="fit text-left noleftpad" scope="row">Perl:</th>
+          <td><%= "$^V ($^O)" %></td>
+        </tr>
+        <tr>
+          <th class="fit text-left noleftpad" scope="row">
+            <i class="fas fa-clock"></i>
+          </th>
+          <th class="fit text-left noleftpad" scope="row">Started:</th>
+          <td>
+            <span class="badge badge-dark">
+              <%= $localtime->($all->{started}) %>
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <th class="fit text-left noleftpad" scope="row">
+            <i class="fas fa-stream"></i>
+          </th>
+          <th class="fit text-left noleftpad" scope="row">Requests:</th>
+          <td><%= $all->{processed} %></td>
+        </tr>
+        <tr>
+          <th class="fit text-left noleftpad" scope="row">
+            <i class="fas fa-wrench"></i>
+          </th>
+          <th class="fit text-left noleftpad" scope="row">Workers:</th>
+          % my @workers = values %{$all->{workers}};
+          % my $idle = grep { !keys %{$_->{connections}} } @workers;
+          <td><%= keys(%{$all->{workers}}) . " ($idle idle)" %></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col-md-2">
+    <div class="stats">
+      <div class="stats-body">
+        <%= $all->{stats}{success} %>
+      </div>
+      <div class="stats-description">Success</div>
+    </div>
+  </div>
+
+  <div class="col-md-2">
+    <div class="stats">
+      <div class="stats-body">
+        <%= $all->{stats}{redirect} %>
+      </div>
+      <div class="stats-description">Redirect</div>
+    </div>
+  </div>
+
+  <div class="col-md-2">
+    <div class="stats">
+      <div class="stats-body">
+        <%= $all->{stats}{client_error} %>
+      </div>
+      <div class="stats-description">Client Error</div>
+    </div>
+  </div>
+
+  <div class="col-md-2">
+    <div class="stats">
+      <div class="stats-body">
+        <%= $all->{stats}{server_error} %>
+      </div>
+      <div class="stats-description">Server Error</div>
+    </div>
+  </div>
+</div>
 
 <h4>Activity</h4>
 

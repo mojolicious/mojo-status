@@ -10,14 +10,6 @@ use Mojo::Util 'humanize_bytes';
 
 our $VERSION = '1.05';
 
-my $STATS = {
-  info         => 0,
-  success      => 0,
-  redirect     => 0,
-  client_error => 0,
-  server_error => 0
-};
-
 sub register {
   my ($self, $app, $config) = @_;
 
@@ -29,7 +21,7 @@ sub register {
   # Initialize cache
   my $map = $self->{map} = Mojo::MemoryMap->new($config->{size});
   $map->writer->store(
-    {processed => 0, started => time, stats => $STATS, slowest => []});
+    {processed => 0, started => time, stats => _stats(), slowest => []});
 
   # Only the two built-in servers are supported for now
   $app->hook(before_server_start => sub { $self->_start(@_) });
@@ -95,7 +87,7 @@ sub _dashboard {
 
   my $map = $c->stash('mojo_status')->{map};
   if ($c->param('reset')) {
-    $map->writer->change(sub { @{$_}{qw(slowest stats)} = ([], $STATS) });
+    $map->writer->change(sub { @{$_}{qw(slowest stats)} = ([], _stats()) });
     return $c->redirect_to('mojo_status');
   }
 
@@ -104,6 +96,7 @@ sub _dashboard {
     html => sub {
       $c->render(
         'mojo-status/dashboard',
+        now      => time,
         usage    => humanize_bytes($map->usage),
         size     => humanize_bytes($map->size),
         activity => _activity($all),
@@ -176,12 +169,12 @@ sub _rendered {
   my $map  = $self->{map};
   my $conn = $map->writer->fetch->{workers}{$$}{connections}{$id};
   return unless $conn && (my $req = $conn->{request});
-  $req->{runtime} = time - $req->{started};
+  $req->{time} = time - $req->{started};
   @{$req}{qw(client status worker)} = ($conn->{client}, $c->res->code, $$);
 
   $map->writer->change(sub {
     my $slowest = $_->{slowest};
-    @$slowest = sort { $b->{runtime} <=> $a->{runtime} } @$slowest, $req;
+    @$slowest = sort { $b->{time} <=> $a->{time} } @$slowest, $req;
     my %seen;
     @$slowest = grep { !$seen{"$_->{method} $_->{path}"}++ } @$slowest;
     pop @$slowest while @$slowest > $self->{slowest};
@@ -207,7 +200,7 @@ sub _slowest {
     my $str = "$req->{method} $req->{path}";
     $str .= "?$req->{query}"      if $req->{query};
     $str .= " → $req->{status}" if $req->{status};
-    my $time = sprintf '%.2f', $req->{runtime};
+    my $time = sprintf '%.2f', $req->{time};
     push @table, [$time, $str, @{$req}{qw(request_id worker client started)}];
   }
 
@@ -238,6 +231,17 @@ sub _start {
   $app->hook(after_dispatch  => sub { $self->_rendered(@_) });
   Mojo::IOLoop->next_tick(sub { $self->_resources });
   Mojo::IOLoop->recurring(5 => sub { $self->_resources });
+}
+
+sub _stats {
+  return {
+    started      => time,
+    info         => 0,
+    success      => 0,
+    redirect     => 0,
+    client_error => 0,
+    server_error => 0
+  };
 }
 
 sub _stream {

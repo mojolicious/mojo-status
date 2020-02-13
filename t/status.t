@@ -35,9 +35,9 @@ get '/subprocess' => sub {
 my $t = Test::Mojo->new;
 
 # Basics
-$t->get_ok('/status.json')->status_is(200)->json_is('/processed', 2);
+$t->get_ok('/status.json')->status_is(200)->json_is('/processed', 0);
 $t->get_ok('/')->status_is(200)->content_is('Hello Mojo!');
-$t->get_ok('/status.json')->status_is(200)->json_is('/processed', 6);
+$t->get_ok('/status.json')->status_is(200)->json_is('/processed', 4);
 
 # Bundled static files
 $t->get_ok('/mojo-status/bootstrap/bootstrap.js')->status_is(200)
@@ -68,12 +68,12 @@ $t->get_ok('/mojo-status/logo-black.png')->status_is(200)
   ->content_type_is('image/png');
 
 # JSON
-$t->get_ok('/status.json')->status_is(200)->json_is('/processed', 50)
+$t->get_ok('/status.json')->status_is(200)->json_is('/processed', 48)
   ->json_has('/started')->json_has("/workers/$$/connections")
   ->json_has("/workers/$$/maxrss")->json_has("/workers/$$/processed")
   ->json_has("/workers/$$/started")->json_has("/workers/$$/stime")
   ->json_has("/workers/$$/utime")->json_has('/slowest/0')
-  ->json_has('/slowest/0/runtime')->json_has('/slowest/0/path')
+  ->json_has('/slowest/0/time')->json_has('/slowest/0/path')
   ->json_has('/slowest/0/request_id')->json_has('/slowest/1')
   ->json_has('/slowest/4')->json_hasnt('/slowest/5');
 

@@ -173,7 +173,7 @@
             <th></th>
             <th>Worker</th>
             <th>Client</th>
-            <th>Started</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>

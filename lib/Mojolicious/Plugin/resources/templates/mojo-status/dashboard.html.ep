@@ -7,7 +7,9 @@
 % end
 
 % my $localtime = sub {
-%   my ($s, $m, $h, $day, $month, $year) = localtime shift;
+%    my ($time, $with_date) = @_;
+%   my ($s, $m, $h, $day, $month, $year) = localtime $time;
+%   return sprintf '%02d:%02d:%02d', $h, $m ,$s unless $with_date;
 %   return sprintf '%04d-%02d-%02d %02d:%02d:%02d', $year + 1900, $month + 1,
 %     $day, $h, $m, $s;
 % };
@@ -38,10 +40,12 @@
           <th class="fit text-left noleftpad" scope="row">
             <i class="fas fa-clock"></i>
           </th>
-          <th class="fit text-left noleftpad" scope="row">Started:</th>
+          <th class="fit text-left noleftpad" scope="row">Uptime:</th>
           <td>
+            % my $uptime = int(($now - $all->{started}) / 86400);
+            <%= "$uptime " . ($uptime == 1 ? 'day' : 'days') %>
             <span class="badge badge-dark">
-              <%= $localtime->($all->{started}) %>
+              <%= $localtime->($all->{started}, 0) %>
             </span>
           </td>
         </tr>
@@ -54,7 +58,7 @@
           % my $recent = $stats->{info} + $stats->{success} + $stats->{redirect}
           %  + $stats->{client_error} + $stats->{server_error};
           % my $rps = ($recent > 1 ? $recent : 0) / ($now - $stats->{started});
-          <td><%= $all->{processed} %> (<%= sprintf '%.3f', $rps %>/s)</td>
+          <td><%= sprintf '%.3f', $rps %>/s</td>
         </tr>
         <tr>
           <th class="fit text-left noleftpad" scope="row">
@@ -200,7 +204,7 @@
               <td><%= $row->[4] %></td>
               <td>
                 <span class="badge badge-dark">
-                  <%= $localtime->($row->[5]) %>
+                  <%= $localtime->($row->[5], 1) %>
                 </span>
               </td>
             </tr>

@@ -1,5 +1,6 @@
 
 1.06  2020-02-14
+  - Fixed displaying RSS on Linux correctly.
 
 1.05  2020-02-13
   - Added support for tracking different response types.

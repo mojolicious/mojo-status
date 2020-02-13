@@ -8,6 +8,8 @@ use Mojo::IOLoop;
 use Mojo::MemoryMap;
 use Mojo::Util 'humanize_bytes';
 
+use constant LINUX => $^O eq 'linux';
+
 our $VERSION = '1.06';
 
 sub register {
@@ -186,6 +188,10 @@ sub _resources {
 
   $self->{map}->writer->change(sub {
     @{$_->{workers}{$$}}{qw(utime stime maxrss)} = (getrusage)[0, 1, 2];
+
+    # On Linux this resturns kilobytes
+    $_->{workers}{$$}{maxrss} = $_->{workers}{$$}{maxrss} * 1000 if LINUX;
+
     for my $id (keys %{$_->{workers}{$$}{connections}}) {
       _read_write($_->{workers}{$$}{connections}{$id}, $id);
     }

@@ -1,5 +1,8 @@
 
 1.05  2020-02-13
+  - Added support for tracking different response types.
+  - Improved template design.
+  - Fixed display bugs for large request paths and query strings.
 
 1.04  2020-02-13
   - Improved template design.

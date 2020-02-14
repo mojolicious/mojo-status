@@ -5,6 +5,7 @@ use warnings;
 
 use ExtUtils::MakeMaker;
 
+# File::Temp 0.2308+ is required to avoid flock bugs
 WriteMakefile(
   NAME         => 'Mojolicious::Plugin::Status',
   VERSION_FROM => 'lib/Mojolicious/Plugin/Status.pm',
@@ -33,6 +34,7 @@ WriteMakefile(
     Mojolicious     => '8.33',
     'BSD::Resource' => 0,
     'File::Map'     => 0,
+    'File::Temp'    => '0.2308',
     Sereal          => 0
   },
   test => {TESTS => 't/*.t'}

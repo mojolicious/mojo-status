@@ -10,7 +10,7 @@ use Mojo::Util 'humanize_bytes';
 
 use constant LINUX => $^O eq 'linux';
 
-our $VERSION = '1.07';
+our $VERSION = '1.08';
 
 sub register {
   my ($self, $app, $config) = @_;

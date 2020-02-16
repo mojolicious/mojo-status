@@ -1,5 +1,6 @@
 
-1.08  2020-02-15
+1.08  2020-02-16
+  - Fixed support for *BSD operating systems.
 
 1.07  2020-02-14
   - Updated the File::Temp requirement to version 0.2308 to avoid flock bugs

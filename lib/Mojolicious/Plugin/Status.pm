@@ -10,7 +10,7 @@ use Mojo::Util 'humanize_bytes';
 
 use constant MACOS => $^O eq 'darwin';
 
-our $VERSION = '1.08';
+our $VERSION = '1.09';
 
 sub register {
   my ($self, $app, $config) = @_;

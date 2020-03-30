@@ -1,12 +1,12 @@
 package Mojolicious::Plugin::Status;
 use Mojo::Base 'Mojolicious::Plugin';
 
-use BSD::Resource 'getrusage';
-use Time::HiRes 'time';
-use Mojo::File 'path';
+use BSD::Resource qw(getrusage);
+use Time::HiRes qw(time);
+use Mojo::File qw(path);
 use Mojo::IOLoop;
 use Mojo::MemoryMap;
-use Mojo::Util 'humanize_bytes';
+use Mojo::Util qw(humanize_bytes);
 
 use constant MACOS => $^O eq 'darwin';
 

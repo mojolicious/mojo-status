@@ -31,11 +31,11 @@ WriteMakefile(
     },
   },
   PREREQ_PM => {
-    Mojolicious     => '8.33',
-    'BSD::Resource' => 0,
-    'File::Map'     => 0,
-    'File::Temp'    => '0.2308',
-    Sereal          => 0
+    Mojolicious        => '8.33',
+    'BSD::Resource'    => 0,
+    'Cpanel::JSON::XS' => '4.09',
+    'File::Map'        => 0,
+    'File::Temp'       => '0.2308'
   },
   test => {TESTS => 't/*.t'}
 );

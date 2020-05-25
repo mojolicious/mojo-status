@@ -2,9 +2,9 @@ package Mojo::MemoryMap::Writer;
 use Mojo::Base -base;
 
 use Fcntl ':flock';
-use Sereal qw(get_sereal_decoder get_sereal_encoder);
+use Cpanel::JSON::XS;
 
-my ($DECODER, $ENCODER) = (get_sereal_decoder, get_sereal_encoder);
+my $JSON = Cpanel::JSON::XS->new->utf8;
 
 sub DESTROY { flock shift->{fh}, LOCK_UN }
 
@@ -15,7 +15,7 @@ sub change {
   return $self->store($stats);
 }
 
-sub fetch { $DECODER->decode(${shift->{map}}) }
+sub fetch { ($JSON->decode_prefix(${shift->{map}}))[0] }
 
 sub new {
   my $self = shift->SUPER::new(@_);
@@ -25,7 +25,7 @@ sub new {
 
 sub store {
   my ($self, $data) = @_;
-  ${$self->{usage}} = my $usage = length(my $bytes = $ENCODER->encode($data));
+  ${$self->{usage}} = my $usage = length(my $bytes = $JSON->encode($data));
   return undef if $usage > length ${$self->{map}};
   substr ${$self->{map}}, 0, length $bytes, $bytes;
   return 1;

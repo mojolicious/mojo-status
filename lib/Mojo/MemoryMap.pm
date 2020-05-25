@@ -1,8 +1,8 @@
 package Mojo::MemoryMap;
 use Mojo::Base -base;
 
-use File::Map 'map_anonymous';
-use Mojo::File 'tempfile';
+use File::Map qw(map_anonymous);
+use Mojo::File qw(tempfile);
 use Mojo::MemoryMap::Writer;
 
 sub new {

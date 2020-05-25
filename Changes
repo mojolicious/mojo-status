@@ -1,4 +1,6 @@
 
+1.10  2020-05-26
+
 1.09  2020-05-25
   - Switched from Sereal to Cpanel::JSON::XS for serialization in
     Mojo::MemoryMap.

@@ -26,6 +26,7 @@ jobs:
       - name: Install Dependencies
         run: |
           cpanm -n --installdeps .
+          cpanm -n BSD::Resource Cpanel::JSON::XS File::Map Mojolicious
           cpanm -n Test::Pod Test::Pod::Coverage
       - name: Run Tests
         run: prove -l t

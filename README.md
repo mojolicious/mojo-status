@@ -1,5 +1,5 @@
 
-# Mojolicious-Plugin-Status [![Build Status](https://travis-ci.com/mojolicious/mojo-status.svg?branch=master)](https://travis-ci.com/mojolicious/mojo-status)
+# Mojolicious-Plugin-Status [![](https://github.com/mojolicious/mojo-status/workflows/linux/badge.svg)](https://github.com/mojolicious/mojo-status/actions)
 
 ![Screenshot](https://raw.github.com/mojolicious/mojo-status/master/examples/status.png?raw=true)
 

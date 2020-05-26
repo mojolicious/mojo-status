@@ -1,5 +1,6 @@
 
 1.10  2020-05-26
+  - Improved Mojo::MemoryMap to not require a Perl with 64-bit integer support.
 
 1.09  2020-05-25
   - Switched from Sereal to Cpanel::JSON::XS for serialization in

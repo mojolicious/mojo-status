@@ -17,8 +17,8 @@ sub change {
 
 sub fetch {
   my $self = shift;
-  my $len  = unpack 'Q>', substr(${$self->{map}}, 0, 8);
-  return $JSON->decode(substr(${$self->{map}}, 8, $len));
+  my $len  = unpack 'N', substr(${$self->{map}}, 0, 4);
+  return $JSON->decode(substr(${$self->{map}}, 4, $len));
 }
 
 sub new {
@@ -31,7 +31,7 @@ sub store {
   my ($self, $data) = @_;
 
   my $json  = $JSON->encode($data);
-  my $bytes = pack('Q>', length $json) . $json;
+  my $bytes = pack('N', length $json) . $json;
 
   ${$self->{usage}} = my $usage = length $bytes;
   return undef if $usage > length ${$self->{map}};

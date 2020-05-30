@@ -22,8 +22,7 @@ sub register {
 
   # Initialize cache
   my $map = $self->{map} = Mojo::MemoryMap->new($config->{size});
-  $map->writer->store(
-    {processed => 0, started => time, stats => _stats(), slowest => []});
+  $map->writer->store({processed => 0, started => time, stats => _stats(), slowest => []});
 
   # Only the two built-in servers are supported for now
   $app->hook(before_server_start => sub { $self->_start(@_) });
@@ -36,8 +35,7 @@ sub register {
   push @{$app->renderer->paths}, $resources->child('templates')->to_string;
 
   # Routes
-  $prefix->get('/' => {mojo_status => $self} => \&_dashboard)
-    ->name('mojo_status');
+  $prefix->get('/' => {mojo_status => $self} => \&_dashboard)->name('mojo_status');
 }
 
 sub _activity {
@@ -113,8 +111,7 @@ sub _dashboard {
 sub _read_write {
   my ($record, $id) = @_;
   return unless my $stream = Mojo::IOLoop->stream($id);
-  @{$record}{qw(bytes_read bytes_written)}
-    = ($stream->bytes_read, $stream->bytes_written);
+  @{$record}{qw(bytes_read bytes_written)} = ($stream->bytes_read, $stream->bytes_written);
 }
 
 sub _request {
@@ -219,8 +216,7 @@ sub _start {
 
   # Register started workers
   Mojo::IOLoop->next_tick(sub {
-    $self->{map}->writer->change(
-      sub { $_->{workers}{$$} = {started => time, processed => 0} });
+    $self->{map}->writer->change(sub { $_->{workers}{$$} = {started => time, processed => 0} });
   });
 
   # Remove stopped workers
@@ -240,14 +236,7 @@ sub _start {
 }
 
 sub _stats {
-  return {
-    started      => time,
-    info         => 0,
-    success      => 0,
-    redirect     => 0,
-    client_error => 0,
-    server_error => 0
-  };
+  return {started => time, info => 0, success => 0, redirect => 0, client_error => 0, server_error => 0};
 }
 
 sub _stream {
@@ -256,9 +245,7 @@ sub _stream {
   my $stream = Mojo::IOLoop->stream($id);
   $stream->on(
     close => sub {
-      $self->{map}->writer->change(
-        sub { delete $_->{workers}{$$}{connections}{$id} if $_->{workers}{$$} }
-      );
+      $self->{map}->writer->change(sub { delete $_->{workers}{$$}{connections}{$id} if $_->{workers}{$$} });
     }
   );
 }
@@ -274,12 +261,7 @@ sub _tx {
       return if $map->writer->fetch->{workers}{$$}{connections}{$id};
 
       $map->writer->change(sub {
-        $_->{workers}{$$}{connections}{$id} = {
-          started       => time,
-          processed     => 0,
-          bytes_read    => 0,
-          bytes_written => 0
-        };
+        $_->{workers}{$$}{connections}{$id} = {started => time, processed => 0, bytes_read => 0, bytes_written => 0};
       });
       $self->_stream($id);
     }
@@ -317,16 +299,14 @@ Mojolicious::Plugin::Status - Mojolicious server status
 =begin html
 
 <p>
-  <img alt="Screenshot"
-    src="https://raw.github.com/mojolicious/mojo-status/master/examples/status.png?raw=true"
+  <img alt="Screenshot" src="https://raw.github.com/mojolicious/mojo-status/master/examples/status.png?raw=true"
     width="600px">
 </p>
 
 =end html
 
-L<Mojolicious::Plugin::Status> is a L<Mojolicious> plugin providing a server
-status ui for L<Mojo::Server::Daemon> and L<Mojo::Server::Prefork>. Note that
-this module is B<EXPERIMENTAL> and should therefore only be used for debugging
+L<Mojolicious::Plugin::Status> is a L<Mojolicious> plugin providing a server status ui for L<Mojo::Server::Daemon> and
+L<Mojo::Server::Prefork>. Note that this module is B<EXPERIMENTAL> and should therefore only be used for debugging
 purposes.
 
 =head1 OPTIONS
@@ -338,24 +318,22 @@ L<Mojolicious::Plugin::Status> supports the following options.
   # Mojolicious::Lite
   plugin Status => {return_to => 'some_route'};
 
-Name of route or path to return to when leaving the server status ui, defaults
-to C</>.
+Name of route or path to return to when leaving the server status ui, defaults to C</>.
 
 =head2 route
 
   # Mojolicious::Lite
   plugin Status => {route => app->routes->any('/status')};
 
-L<Mojolicious::Routes::Route> object to attach the server status ui to, defaults
-to generating a new one with the prefix C</mojo-status>.
+L<Mojolicious::Routes::Route> object to attach the server status ui to, defaults to generating a new one with the
+prefix C</mojo-status>.
 
 =head2 size
 
   # Mojolicious::Lite
   plugin Status => {size => 1234};
 
-Size of anonymous mapped memory to use for storing statistics, defaults to
-C<52428800> (50 MiB).
+Size of anonymous mapped memory to use for storing statistics, defaults to C<52428800> (50 MiB).
 
 =head2 slowest
 
@@ -366,8 +344,7 @@ Number of slowest requests to track, defaults to C<10>.
 
 =head1 METHODS
 
-L<Mojolicious::Plugin::Status> inherits all methods from
-L<Mojolicious::Plugin> and implements the following new ones.
+L<Mojolicious::Plugin::Status> inherits all methods from L<Mojolicious::Plugin> and implements the following new ones.
 
 =head2 register
 
@@ -377,15 +354,14 @@ Register renderer and helper in L<Mojolicious> application.
 
 =head1 BUNDLED FILES
 
-The L<Mojolicious::Plugin::Status> distribution includes a few files with
-different licenses that have been bundled for internal use.
+The L<Mojolicious::Plugin::Status> distribution includes a few files with different licenses that have been bundled for
+internal use.
 
 =head2 Artwork
 
   Copyright (C) 2018, Sebastian Riedel.
 
-Licensed under the CC-SA License, Version 4.0
-L<http://creativecommons.org/licenses/by-sa/4.0>.
+Licensed under the CC-SA License, Version 4.0 L<http://creativecommons.org/licenses/by-sa/4.0>.
 
 =head2 Bootstrap
 
@@ -397,8 +373,8 @@ Licensed under the MIT License, L<http://creativecommons.org/licenses/MIT>.
 
   Copyright (C) Dave Gandy.
 
-Licensed under the MIT License, L<http://creativecommons.org/licenses/MIT>, and
-the SIL OFL 1.1, L<http://scripts.sil.org/OFL>.
+Licensed under the MIT License, L<http://creativecommons.org/licenses/MIT>, and the SIL OFL 1.1,
+L<http://scripts.sil.org/OFL>.
 
 =head1 AUTHOR
 
@@ -408,8 +384,8 @@ Sebastian Riedel, C<sri@cpan.org>.
 
 Copyright (C) 2018-2020, Sebastian Riedel and others.
 
-This program is free software, you can redistribute it and/or modify it under
-the terms of the Artistic License version 2.0.
+This program is free software, you can redistribute it and/or modify it under the terms of the Artistic License version
+2.0.
 
 =head1 SEE ALSO
 

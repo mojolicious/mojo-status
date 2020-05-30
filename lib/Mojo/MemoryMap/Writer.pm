@@ -58,13 +58,12 @@ Mojo::MemoryMap::Writer - Writer
 
 =head1 DESCRIPTION
 
-L<Mojo::MemoryMap::Writer> is a scope guard for L<Mojo::MemoryMap> that allows
-you to write safely to anonymous mapped memory segments.
+L<Mojo::MemoryMap::Writer> is a scope guard for L<Mojo::MemoryMap> that allows you to write safely to anonymous mapped
+memory segments.
 
 =head1 METHODS
 
-L<Mojo::MemoryMap::Writer> inherits all methods from L<Mojo::Base> and
-implements the following new ones.
+L<Mojo::MemoryMap::Writer> inherits all methods from L<Mojo::Base> and implements the following new ones.
 
 =head2 change
 
@@ -97,7 +96,6 @@ Store data, replacing all existing data.
 
 =head1 SEE ALSO
 
-L<Mojolicious::Plugin::Status>, L<Mojolicious::Guides>,
-L<https://mojolicious.org>.
+L<Mojolicious::Plugin::Status>, L<Mojolicious::Guides>, L<https://mojolicious.org>.
 
 =cut

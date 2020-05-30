@@ -1,19 +1,17 @@
 
-1.11  2020-05-27
+1.11  2020-05-30
 
 1.10  2020-05-26
   - Improved Mojo::MemoryMap to not require a Perl with 64-bit integer support.
 
 1.09  2020-05-25
-  - Switched from Sereal to Cpanel::JSON::XS for serialization in
-    Mojo::MemoryMap.
+  - Switched from Sereal to Cpanel::JSON::XS for serialization in Mojo::MemoryMap.
 
 1.08  2020-02-16
   - Fixed support for *BSD operating systems.
 
 1.07  2020-02-14
-  - Updated the File::Temp requirement to version 0.2308 to avoid flock bugs
-    that could make web apps hang forever.
+  - Updated the File::Temp requirement to version 0.2308 to avoid flock bugs that could make web apps hang forever.
 
 1.06  2020-02-14
   - Fixed displaying RSS on Linux correctly.
@@ -27,18 +25,16 @@
   - Improved template design.
 
 1.03  2020-02-12
-  - Added support for retaining a list of the slowest requests since server
-    start.
+  - Added support for retaining a list of the slowest requests since server start.
   - Added reusable Mojo::MemoryMap module.
   - Improved template design.
 
 1.02  2020-02-10
-  - Switched to File::Map as storage backend, so this plugin should be much
-    more reliable and safer to use now. (kraih, haarg, leont)
+  - Switched to File::Map as storage backend, so this plugin should be much more reliable and safer to use now.
+    (kraih, haarg, leont)
 
 1.01  2019-10-07
-  - The IPC mechanism used by this module is unreliable, so production use is
-    strongly discouraged.
+  - The IPC mechanism used by this module is unreliable, so production use is strongly discouraged.
 
 1.0  2018-09-17
   - Fixed a problem where subprocesses would show up in the worker list.

@@ -25,11 +25,7 @@ sub writer {
   my $self = shift;
 
   my $fh = $self->{fh}{$$} ||= $self->{tempfile}->open('>');
-  return Mojo::MemoryMap::Writer->new(
-    fh    => $fh,
-    map   => $self->{map},
-    usage => \$self->{usage}
-  );
+  return Mojo::MemoryMap::Writer->new(fh => $fh, map => $self->{map}, usage => \$self->{usage});
 }
 
 1;
@@ -53,22 +49,19 @@ Mojo::MemoryMap - Safely use anonymous memory mapped segments
 
 =head1 DESCRIPTION
 
-L<Mojo::MemoryMap> uses L<File::Map> to allow you to safely cache mutable data
-structures in anonymous mapped memory segments, and share it between multiple
-processes.
+L<Mojo::MemoryMap> uses L<File::Map> to allow you to safely cache mutable data structures in anonymous mapped memory
+segments, and share it between multiple processes.
 
 =head1 METHODS
 
-L<Mojo::MemoryMap> inherits all methods from L<Mojo::Base> and implements the
-following new ones.
+L<Mojo::MemoryMap> inherits all methods from L<Mojo::Base> and implements the following new ones.
 
 =head2 new
 
   my $map = Mojo::MemoryMap->new;
   my $map = Mojo::MemoryMap->new(4096);
 
-Construct a new L<Mojo::MemoryMap> object, defaults to a L</"size"> of
-C<52428800> bytes (50 MiB).
+Construct a new L<Mojo::MemoryMap> object, defaults to a L</"size"> of C<52428800> bytes (50 MiB).
 
 =head2 size
 
@@ -86,9 +79,8 @@ Current usage of anonymous memory segment in bytes.
 
   my $writer = $map->writer;
 
-Acquire exclusive lock and return L<Mojo::MemoryMap::Writer> object. Allowing
-the shared data structure to be retrieved and modified safely. The lock is
-released when the writer object is destroyed.
+Acquire exclusive lock and return L<Mojo::MemoryMap::Writer> object. Allowing the shared data structure to be retrieved
+and modified safely. The lock is released when the writer object is destroyed.
 
   # Retrieve data
   my $data = $map->writer->fetch;
@@ -105,7 +97,6 @@ released when the writer object is destroyed.
 
 =head1 SEE ALSO
 
-L<Mojolicious::Plugin::Status>, L<Mojolicious::Guides>,
-L<https://mojolicious.org>.
+L<Mojolicious::Plugin::Status>, L<Mojolicious::Guides>, L<https://mojolicious.org>.
 
 =cut

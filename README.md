@@ -3,9 +3,8 @@
 
 ![Screenshot](https://raw.github.com/mojolicious/mojo-status/master/examples/status.png?raw=true)
 
-  A server status ui for the [Mojolicious](https://mojolicious.org) real-time
-  web framework. Note that this module is **EXPERIMENTAL** and should therefore
-  only be used for debugging purposes.
+  A server status ui for the [Mojolicious](https://mojolicious.org) real-time web framework. Note that this module is
+  **EXPERIMENTAL** and should therefore only be used for debugging purposes.
 
 ```perl
 use Mojolicious::Lite;

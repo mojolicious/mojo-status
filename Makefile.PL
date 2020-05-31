@@ -1,4 +1,4 @@
-use 5.010001;
+use 5.016;
 
 use strict;
 use warnings;
@@ -16,7 +16,7 @@ WriteMakefile(
     dynamic_config => 0,
     'meta-spec'    => {version => 2},
     no_index       => {directory => ['t']},
-    prereqs        => {runtime => {requires => {perl => '5.010001'}}},
+    prereqs        => {runtime => {requires => {perl => '5.016'}}},
     resources      => {
       bugtracker => {web => 'https://github.com/mojolicious/mojo-status/issues'},
       homepage   => 'https://mojolicious.org',
@@ -30,7 +30,7 @@ WriteMakefile(
     },
   },
   PREREQ_PM => {
-    Mojolicious        => '8.33',
+    Mojolicious        => '8.50',
     'BSD::Resource'    => 0,
     'Cpanel::JSON::XS' => '4.09',
     'File::Map'        => 0,

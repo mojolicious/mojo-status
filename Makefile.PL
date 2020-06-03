@@ -26,7 +26,7 @@ WriteMakefile(
         url  => 'https://github.com/mojolicious/mojo-status.git',
         web  => 'https://github.com/mojolicious/mojo-status',
       },
-      x_IRC => 'irc://irc.freenode.net/#mojo'
+      x_IRC => {url => 'irc://irc.freenode.net/#mojo', web => 'https://webchat.freenode.net/#mojo'}
     },
   },
   PREREQ_PM => {

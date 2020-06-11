@@ -97,8 +97,8 @@ sub _dashboard {
       $c->render(
         'mojo-status/dashboard',
         now      => time,
-        usage    => humanize_bytes($map->usage),
-        size     => humanize_bytes($map->size),
+        usage    => humanize_bytes($map->usage * 2),
+        size     => humanize_bytes($map->size * 2),
         activity => _activity($all),
         slowest  => _slowest($all),
         all      => $all

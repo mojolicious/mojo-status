@@ -16,9 +16,10 @@ sub change {
 }
 
 sub fetch {
-  my $self = shift;
-  my $len  = unpack 'N', substr(${$self->{map}}, 0, 4);
-  return $JSON->decode(substr(${$self->{map}}, 4, $len));
+  my $self    = shift;
+  my $current = ${$self->{map}{current}};
+  my $len     = unpack 'N', substr(${$self->{map}{$current}}, 0, 4);
+  return $JSON->decode(substr(${$self->{map}{$current}}, 4, $len));
 }
 
 sub new {
@@ -33,9 +34,13 @@ sub store {
   my $json  = $JSON->encode($data);
   my $bytes = pack('N', length $json) . $json;
 
+  my $current = ${$self->{map}{current}};
+  my $next    = $current eq 'a' ? 'b' : 'a';
+
   ${$self->{usage}} = my $usage = length $bytes;
-  return undef if $usage > length ${$self->{map}};
-  substr ${$self->{map}}, 0, $usage, $bytes;
+  return undef if $usage > length ${$self->{map}{$next}};
+  substr ${$self->{map}{$next}}, 0, $usage, $bytes;
+  substr ${$self->{map}{current}}, 0, 1, $next;
 
   return 1;
 }

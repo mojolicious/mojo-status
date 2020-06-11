@@ -10,8 +10,11 @@ sub new {
   my $self = $class->SUPER::new(size => $size // 52428800, usage => 0);
 
   $self->{tempfile} = tempfile->touch;
-  map_anonymous my $map, $self->{size}, 'shared';
-  $self->{map} = \$map;
+  map_anonymous my $map_a, $self->{size}, 'shared';
+  map_anonymous my $map_b, $self->{size}, 'shared';
+  map_anonymous my $current, 1, 'shared';
+  substr $current, 0, 1, 'a';
+  $self->{map} = {a => \$map_a, b => \$map_b, current => \$current};
   $self->writer->store({});
 
   return $self;
@@ -23,8 +26,7 @@ sub usage { shift->{usage} }
 
 sub writer {
   my $self = shift;
-
-  my $fh = $self->{fh}{$$} ||= $self->{tempfile}->open('>');
+  my $fh   = $self->{fh}{$$} ||= $self->{tempfile}->open('>');
   return Mojo::MemoryMap::Writer->new(fh => $fh, map => $self->{map}, usage => \$self->{usage});
 }
 
@@ -67,7 +69,7 @@ Construct a new L<Mojo::MemoryMap> object, defaults to a L</"size"> of C<5242880
 
   my $size = $map->size;
 
-Size of anonymous memory segment in bytes.
+Size of anonymous memory segments in bytes (will use twice as much memory for safety).
 
 =head2 usage
 

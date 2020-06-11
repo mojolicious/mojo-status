@@ -6,7 +6,7 @@ use Cpanel::JSON::XS;
 
 my $JSON = Cpanel::JSON::XS->new->utf8;
 
-sub DESTROY { flock shift->{fh}, LOCK_UN }
+sub DESTROY { flock(shift->{fh}, LOCK_UN) or die "Couldn't flock: $!" }
 
 sub change {
   my ($self, $cb) = @_;
@@ -23,7 +23,7 @@ sub fetch {
 
 sub new {
   my $self = shift->SUPER::new(@_);
-  flock $self->{fh}, LOCK_EX;
+  flock($self->{fh}, LOCK_EX) or die "Couldn't flock: $!";
   return $self;
 }
 

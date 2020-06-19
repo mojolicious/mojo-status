@@ -66,7 +66,7 @@ sub _activity {
           my ($rid, $proto) = @{$req}{qw(request_id protocol)};
 
           my $str = "$req->{method} $req->{path}";
-          $str .= "?$req->{query}"      if $req->{query};
+          $str .= "?$req->{query}"    if $req->{query};
           $str .= " → $req->{status}" if $req->{status};
 
           my $finished = $active ? time : $req->{finished};
@@ -201,7 +201,7 @@ sub _slowest {
   my @table;
   for my $req (@{$all->{slowest}}) {
     my $str = "$req->{method} $req->{path}";
-    $str .= "?$req->{query}"      if $req->{query};
+    $str .= "?$req->{query}"    if $req->{query};
     $str .= " → $req->{status}" if $req->{status};
     my $time = sprintf '%.2f', $req->{time};
     push @table, [$time, $str, @{$req}{qw(request_id worker client started)}];

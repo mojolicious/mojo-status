@@ -1,4 +1,4 @@
-use Mojolicious::Lite;
+use Mojolicious::Lite -signatures;
 use Mojo::EventEmitter;
 use Mojo::IOLoop;
 
@@ -8,44 +8,35 @@ helper events => sub { state $events = Mojo::EventEmitter->new };
 
 get '/' => 'dashboard';
 
-get '/slow' => sub {
-  my $c = shift;
-
+get '/slow' => sub ($c) {
   $c->inactivity_timeout(3600);
 
   Mojo::IOLoop->timer(6 => sub { $c->redirect_to('dashboard') });
 };
 
-get '/superslow' => sub {
-  my $c = shift;
-
+get '/superslow' => sub ($c) {
   $c->inactivity_timeout(3600);
 
   Mojo::IOLoop->timer(31 => sub { $c->redirect_to('dashboard') });
 };
 
-get '/subprocess' => sub {
-  my $c = shift;
-
+get '/subprocess' => sub ($c) {
   $c->inactivity_timeout(3600);
 
-  Mojo::IOLoop->subprocess(sub { sleep 3 },
-    sub { $c->redirect_to('dashboard') });
+  Mojo::IOLoop->subprocess(sub { sleep 3 }, sub { $c->redirect_to('dashboard') });
 };
 
 get '/chat';
 
-websocket '/channel' => sub {
-  my $c = shift;
-
+websocket '/channel' => sub ($c) {
   $c->inactivity_timeout(3600);
 
   # Forward messages from the browser
-  $c->on(message => sub { shift->events->emit(mojochat => shift) });
+  $c->on(message => sub ($c, $message) { $c->events->emit(mojochat => $message) });
 
   # Forward messages to the browser
-  my $cb = $c->events->on(mojochat => sub { $c->send(pop) });
-  $c->on(finish => sub { shift->events->unsubscribe(mojochat => $cb) });
+  my $cb = $c->events->on(mojochat => sub ($events, $message) { $c->send($message) });
+  $c->on(finish => sub ($c) { $c->events->unsubscribe(mojochat => $cb) });
 };
 
 # Minimal single-process WebSocket chat application for browser testing

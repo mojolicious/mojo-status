@@ -285,8 +285,7 @@ Mojolicious::Plugin::Status - Mojolicious server status
   plugin 'Status';
 
   # Secure access to the server status ui with Basic authentication
-  my $under = $self->routes->under('/status' => sub {
-    my $c = shift;
+  my $under = $self->routes->under('/status' => sub ($c) {
     return 1 if $c->req->url->to_abs->userinfo eq 'Bender:rocks';
     $c->res->headers->www_authenticate('Basic');
     $c->render(text => 'Authentication required!', status => 401);

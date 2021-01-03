@@ -10,7 +10,7 @@ use Mojo::Util qw(humanize_bytes);
 
 use constant MACOS => $^O eq 'darwin';
 
-our $VERSION = '1.13';
+our $VERSION = '1.14';
 
 sub register {
   my ($self, $app, $config) = @_;
@@ -381,7 +381,7 @@ Sebastian Riedel, C<sri@cpan.org>.
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2018-2020, Sebastian Riedel and others.
+Copyright (C) 2018-2021, Sebastian Riedel and others.
 
 This program is free software, you can redistribute it and/or modify it under the terms of the Artistic License version
 2.0.

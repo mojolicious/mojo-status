@@ -8,9 +8,9 @@ sub DESTROY { flock(shift->{fh}, LOCK_UN) or die "Couldn't flock: $!" }
 
 sub change {
   my ($self, $cb) = @_;
-  my $stats = $self->fetch;
-  $cb->($_) for $stats;
-  return $self->store($stats);
+  my $data = $self->fetch;
+  $cb->($_) for $data;
+  return $self->store($data);
 }
 
 sub fetch {

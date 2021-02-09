@@ -36,7 +36,7 @@ websocket '/channel' => sub ($c) {
 
   # Forward messages to the browser
   my $cb = $c->events->on(mojochat => sub ($events, $message) { $c->send($message) });
-  $c->on(finish => sub ($c) { $c->events->unsubscribe(mojochat => $cb) });
+  $c->on(finish => sub ($c, $code, $reason) { $c->events->unsubscribe(mojochat => $cb) });
 };
 
 # Minimal single-process WebSocket chat application for browser testing

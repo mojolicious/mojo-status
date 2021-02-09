@@ -1,5 +1,6 @@
 
-1.14  2021-01-03
+1.14  2021-02-09
+  - Switched back to Sereal for serialization in Mojo::MemoryMap to reduce memory usage.
 
 1.13  2020-12-10
   - Updated examples to use signatures.

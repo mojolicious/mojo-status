@@ -29,7 +29,7 @@
         </tr>
         <tr>
           <th class="fit text-left noleftpad" scope="row">
-            <i class="fas fa-rocket"></i>
+            <i class="fas fa-microchip"></i>
           </th>
           <th class="fit text-left noleftpad" scope="row">Plugin:</th>
           <td>
@@ -38,12 +38,20 @@
         </tr>
         <tr>
           <th class="fit text-left noleftpad" scope="row">
-            <i class="fas fa-clock"></i>
+            <i class="fas fa-rocket"></i>
           </th>
           <th class="fit text-left noleftpad" scope="row">Uptime:</th>
           <td>
             % my $uptime = int(($now - $all->{started}) / 86400);
             <%= "$uptime " . ($uptime == 1 ? 'day' : 'days') %>
+          </td>
+        </tr>
+        <tr>
+          <th class="fit text-left noleftpad" scope="row">
+            <i class="fas fa-clock"></i>
+          </th>
+          <th class="fit text-left noleftpad" scope="row">Started:</th>
+          <td>
             <span class="badge badge-dark">
               <%= $localtime->($all->{started}, 0) %>
             </span>

@@ -212,7 +212,9 @@ sub _slowest {
 
 sub _start {
   my ($self, $server, $app) = @_;
-  return unless $server->isa('Mojo::Server::Daemon');
+
+  return $app->log->warn('Server not suported by Mojolicious::Plugin::Status')
+    unless $server->isa('Mojo::Server::Daemon');
 
   # Register started workers
   Mojo::IOLoop->next_tick(sub {

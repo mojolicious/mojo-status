@@ -68,6 +68,20 @@
         </tr>
         <tr>
           <th class="fit text-left noleftpad" scope="row">
+            <i class="fas fa-exchange-alt"></i>
+          </th>
+          <th class="fit text-left noleftpad" scope="row">Connections:</th>
+          <td><%= $all->{stats}{connections} %></td>
+        </tr>
+        <tr>
+          <th class="fit text-left noleftpad" scope="row">
+            <i class="fas fa-traffic-light"></i>
+          </th>
+          <th class="fit text-left noleftpad" scope="row">Traffic:</th>
+          <td><%= $traffic %></td>
+        </tr>
+        <tr>
+          <th class="fit text-left noleftpad" scope="row">
             <i class="fas fa-wrench"></i>
           </th>
           <th class="fit text-left noleftpad" scope="row">Workers:</th>

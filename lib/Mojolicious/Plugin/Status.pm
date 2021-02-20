@@ -99,6 +99,7 @@ sub _dashboard {
         now      => time,
         usage    => humanize_bytes($map->usage),
         size     => humanize_bytes($map->size),
+        traffic  => humanize_bytes(($all->{stats}{kb_read} + $all->{stats}{kb_written}) * 1000),
         activity => _activity($all),
         slowest  => _slowest($all),
         all      => $all
@@ -109,9 +110,10 @@ sub _dashboard {
 }
 
 sub _read_write {
-  my ($record, $id) = @_;
+  my ($all, $id) = @_;
   return unless my $stream = Mojo::IOLoop->stream($id);
-  @{$record}{qw(bytes_read bytes_written)} = ($stream->bytes_read, $stream->bytes_written);
+  @{$all->{workers}{$$}{connections}{$id}}{qw(bytes_read bytes_written)}
+    = ($stream->bytes_read, $stream->bytes_written);
 }
 
 sub _request {
@@ -133,7 +135,7 @@ sub _request {
       query      => $url->query->to_string,
       started    => time
     };
-    _read_write($_->{workers}{$$}{connections}{$id}, $id);
+    _read_write($_, $id);
     $_->{workers}{$$}{connections}{$id}{client} = $tx->remote_address;
   });
 
@@ -189,9 +191,7 @@ sub _resources {
     # macOS actually returns bytes instead of kilobytes
     $_->{workers}{$$}{maxrss} = $_->{workers}{$$}{maxrss} * 1000 unless MACOS;
 
-    for my $id (keys %{$_->{workers}{$$}{connections}}) {
-      _read_write($_->{workers}{$$}{connections}{$id}, $id);
-    }
+    for my $id (keys %{$_->{workers}{$$}{connections}}) { _read_write($_, $id) }
   });
 }
 
@@ -238,7 +238,17 @@ sub _start {
 }
 
 sub _stats {
-  return {started => time, info => 0, success => 0, redirect => 0, client_error => 0, server_error => 0};
+  return {
+    started      => time,
+    connections  => 0,
+    kb_read      => 0,
+    kb_written   => 0,
+    info         => 0,
+    success      => 0,
+    redirect     => 0,
+    client_error => 0,
+    server_error => 0
+  };
 }
 
 sub _stream {
@@ -247,7 +257,16 @@ sub _stream {
   my $stream = Mojo::IOLoop->stream($id);
   $stream->on(
     close => sub {
-      $self->{map}->writer->change(sub { delete $_->{workers}{$$}{connections}{$id} if $_->{workers}{$$} });
+      my $stream = shift;
+
+      $self->{map}->writer->change(sub {
+        return unless $_->{workers}{$$};
+        delete $_->{workers}{$$}{connections}{$id};
+        $_->{stats}{connections}++;
+        my ($read, $written) = (int($stream->bytes_read / 1000), int($stream->bytes_written / 1000));
+        $_->{stats}{kb_read}    += $read    if $read > 0;
+        $_->{stats}{kb_written} += $written if $written > 0;
+      });
     }
   );
 }

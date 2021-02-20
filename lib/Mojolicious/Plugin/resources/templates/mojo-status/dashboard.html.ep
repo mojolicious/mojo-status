@@ -7,9 +7,7 @@
 % end
 
 % my $localtime = sub {
-%    my ($time, $with_date) = @_;
-%   my ($s, $m, $h, $day, $month, $year) = localtime $time;
-%   return sprintf '%02d:%02d:%02d', $h, $m ,$s unless $with_date;
+%   my ($s, $m, $h, $day, $month, $year) = localtime(shift);
 %   return sprintf '%04d-%02d-%02d %02d:%02d:%02d', $year + 1900, $month + 1,
 %     $day, $h, $m, $s;
 % };
@@ -53,7 +51,7 @@
           <th class="fit text-left noleftpad" scope="row">Started:</th>
           <td>
             <span class="badge badge-dark">
-              <%= $localtime->($all->{started}, 0) %>
+              <%= $localtime->($all->{started}) %>
             </span>
           </td>
         </tr>
@@ -212,7 +210,7 @@
               <td><%= $row->[4] %></td>
               <td>
                 <span class="badge badge-dark">
-                  <%= $localtime->($row->[5], 1) %>
+                  <%= $localtime->($row->[5]) %>
                 </span>
               </td>
             </tr>

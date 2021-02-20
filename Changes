@@ -1,4 +1,6 @@
 
+1.16  2021-02-21
+
 1.15  2021-02-20
   - Improved Mojolicious::Plugin::Status to log if server is not supported.
   - Improved template design.

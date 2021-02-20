@@ -164,14 +164,13 @@ sub _request {
 sub _rendered {
   my ($self, $c) = @_;
 
-  my $id   = $c->tx->connection;
-  my $map  = $self->{map};
-  my $conn = $map->writer->fetch->{workers}{$$}{connections}{$id};
-  return unless $conn && (my $req = $conn->{request});
-  $req->{time} = time - $req->{started};
-  @{$req}{qw(client status worker)} = ($conn->{client}, $c->res->code, $$);
+  my $id = $c->tx->connection;
+  $self->{map}->writer->change(sub {
+    return unless my $conn = $_->{workers}{$$}{connections}{$id};
+    return unless my $req  = $conn->{request};
+    $req->{time} = time - $req->{started};
+    @{$req}{qw(client status worker)} = ($conn->{client}, $c->res->code, $$);
 
-  $map->writer->change(sub {
     my $slowest = $_->{slowest};
     @$slowest = sort { $b->{time} <=> $a->{time} } @$slowest, $req;
     my %seen;

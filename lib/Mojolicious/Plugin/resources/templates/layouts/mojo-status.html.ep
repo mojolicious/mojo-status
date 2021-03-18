@@ -9,9 +9,8 @@
     %= stylesheet '/mojo-status/app.css'
     %= content_for 'head'
   </head>
-  <body>
-    <nav
-      class="navbar navbar-expand-lg navbar-light bg-light mb-3 border-bottom">
+  <body class="d-flex flex-column h-100">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-3 border-bottom">
       <div class="container">
         %= link_to 'mojo_status' => (class => 'navbar-brand') => begin
           <picture>
@@ -61,8 +60,27 @@
         </div>
       </div>
     </nav>
-    <div class="container">
+    <div class="container flex-grow-1">
       %= content
     </div>
+    <footer>
+      <div class="container-fluid p-3 mojo-footer">
+        <div class="container">
+          <div class="row">
+            <div class="col-sm align-self-center text-center">
+              <b>Free</b> and <b>Open Source</b>.
+            </div>
+            <div class="col-sm align-self-center text-center mojo-copy">
+                <i class="far fa-copyright"></i> 2018-2021 Sebastian Riedel.
+            </div>
+            <div class="col-sm align-self-center text-center mojo-social">
+              <a alt="GitHub" href="https://github.com/mojolicious/mojo-status"><i class="fab fa-github-alt"></i></a>
+              <a alt="Twitter" href="https://twitter.com/perlmojo"><i class="fab fa-twitter"></i></a>
+              <a alt="LinkedIn" href="https://www.linkedin.com/groups/8963713/"><i class="fab fa-linkedin"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
   </body>
 </html>

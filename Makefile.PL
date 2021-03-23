@@ -29,6 +29,6 @@ WriteMakefile(
       x_IRC => {url => 'irc://irc.freenode.net/#mojo', web => 'https://webchat.freenode.net/#mojo'}
     },
   },
-  PREREQ_PM => {Mojolicious => '8.50', 'BSD::Resource' => 0, 'Sereal' => 0, 'File::Map' => 0, 'File::Temp' => '0.2308'},
+  PREREQ_PM => {Mojolicious => '9.11', 'BSD::Resource' => 0, 'Sereal' => 0, 'File::Map' => 0, 'File::Temp' => '0.2308'},
   test      => {TESTS       => 't/*.t'}
 );

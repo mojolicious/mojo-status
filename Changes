@@ -1,5 +1,6 @@
 
-1.17  2021-03-19
+1.17  2021-03-23
+  - Fixed Mojolicious 9.11 compatibility.
 
 1.16  2021-03-18
   - Updated ui with more consistent Mojolicious design.

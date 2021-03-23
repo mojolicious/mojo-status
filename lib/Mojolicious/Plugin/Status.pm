@@ -35,7 +35,7 @@ sub register {
   push @{$app->renderer->paths}, $resources->child('templates')->to_string;
 
   # Routes
-  $prefix->get('/' => => [format => ['json']] => {format => undef, mojo_status => $self} => \&_dashboard)
+  $prefix->get('/' => [format => ['json']] => {format => undef, mojo_status => $self} => \&_dashboard)
     ->name('mojo_status');
 }
 

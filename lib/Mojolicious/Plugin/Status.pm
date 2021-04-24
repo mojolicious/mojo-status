@@ -296,7 +296,7 @@ Mojolicious::Plugin::Status - Mojolicious server status
 =begin html
 
 <p>
-  <img alt="Screenshot" src="https://raw.github.com/mojolicious/mojo-status/master/examples/status.png?raw=true"
+  <img alt="Screenshot" src="https://raw.github.com/mojolicious/mojo-status/main/examples/status.png?raw=true"
     width="600px">
 </p>
 

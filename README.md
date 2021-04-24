@@ -1,7 +1,7 @@
 
 # Mojolicious-Plugin-Status [![](https://github.com/mojolicious/mojo-status/workflows/linux/badge.svg)](https://github.com/mojolicious/mojo-status/actions)
 
-![Screenshot](https://raw.github.com/mojolicious/mojo-status/master/examples/status.png?raw=true)
+![Screenshot](https://raw.github.com/mojolicious/mojo-status/main/examples/status.png?raw=true)
 
   A server status ui for the [Mojolicious](https://mojolicious.org) real-time web framework. Note that this module is
   **EXPERIMENTAL** and should therefore only be used for debugging purposes.

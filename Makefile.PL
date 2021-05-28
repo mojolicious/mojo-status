@@ -26,7 +26,7 @@ WriteMakefile(
         url  => 'https://github.com/mojolicious/mojo-status.git',
         web  => 'https://github.com/mojolicious/mojo-status',
       },
-      x_IRC => {url => 'irc://irc.libera.chat/#mojo', web => 'https://kiwiirc.com/nextclient/#ircs://irc.libera.chat/#mojo'}
+      x_IRC => {url => 'irc://irc.libera.chat/#mojo', web => 'https://web.libera.chat/#mojo'}
     },
   },
   PREREQ_PM => {Mojolicious => '9.11', 'BSD::Resource' => 0, 'Sereal' => 0, 'File::Map' => 0, 'File::Temp' => '0.2308'},

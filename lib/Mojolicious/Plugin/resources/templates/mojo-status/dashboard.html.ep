@@ -27,6 +27,13 @@
         </tr>
         <tr>
           <th class="fit text-left noleftpad" scope="row">
+            <i class="fas fa-code"></i>
+          </th>
+          <th class="fit text-left noleftpad" scope="row">Perl:</th>
+          <td><%= "$^V, $^O" %></td>
+        </tr>
+        <tr>
+          <th class="fit text-left noleftpad" scope="row">
             <i class="fas fa-microchip"></i>
           </th>
           <th class="fit text-left noleftpad" scope="row">Plugin:</th>
@@ -157,7 +164,7 @@
             <td><%= $row->[8] // '' %></td>
             <td><%= $row->[9] // '' %></td>
             <td class="wrappable"><code><%= $row->[10] // '' %></code></td>
-          </tr> 
+          </tr>
         % }
       </tbody>
     </table>
